@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>لوحة تحكم الأدمن العام</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; background: #f5f7f8; color: #17202a; padding: 20px; }
+.input { width: 100%; padding: 12px; border: 1px solid #d8dee2; border-radius: 12px; background: #fff; outline: none; margin-bottom: 12px; }
+.primary { background: #0f766e; color: #fff; border: 0; border-radius: 12px; padding: 12px 14px; cursor: pointer; font-weight: bold; width: 100%; }
+.danger { background: #fee2e2; color: #b91c1c; border: 0; border-radius: 12px; padding: 10px 14px; cursor: pointer; }
+.box-panel { width: 100%; max-width: 600px; background: #fff; border-radius: 22px; padding: 24px; box-shadow: 0 8px 30px #0004; margin: auto; }
+.box-title { text-align: center; font-size: 26px; font-weight: 900; color: #0f766e; margin-bottom: 20px; }
+.section { margin: 15px 0 8px; font-weight: 800; }
+.muted { color: #68737d; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="VIEW_LOGIN" style="display:flex; align-items:center; justify-content:center; min-height:90vh;">
+    <div class="box-panel" style="max-width: 400px;">
+        <h1 class="box-title">دخول الأدمن العام</h1>
+        <label>اسم المستخدم</label>
+        <input id="adminUser" class="input" placeholder="أدخل اسم المستخدم">
+        <label>كلمة المرور</label>
+        <input id="adminPass" class="input" type="password" placeholder="أدخل كلمة المرور" onkeydown="if(event.key==='Enter') loginAdmin()">
+        <button class="primary" onclick="loginAdmin()">تسجيل الدخول</button>
+        <div id="loginMsg" style="text-align:center; margin-top:10px; color:red; font-weight:bold;"></div>
+    </div>
+</div>
+
+<div id="VIEW_ADMIN" style="display:none; max-width:700px; margin:auto;">
+    <div class="box-panel" style="max-width:100%">
+        <h2 style="margin-top:0; color:#0f766e; text-align:center">⚙️ لوحة تحكم الإدارة العليا</h2>
+        <div class="section" style="color:#b91c1c">🔔 طلبات الاشتراك الجديدة (مع سندات الإيداع)</div>
+        <div id="adminRequests" style="max-height:280px; overflow-y:auto; margin-bottom:20px; border:1px solid #fee2e2; border-radius:12px; padding:10px; background:#fff5f5"></div>
+        <div class="section">✅ الحسابات والاشتراكات النشطة</div>
+        <div id="adminList" style="max-height:350px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee; border-radius:12px; padding:10px"></div>
+        <button class="danger" style="width:100%; padding:14px; font-size:16px" onclick="location.reload()">تسجيل خروج</button>
+    </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCFQnayk8HGw8Hct_nk911RtE5RHCwTKx4",
+    authDomain: "pos-salem.firebaseapp.com",
+    projectId: "pos-salem",
+    storageBucket: "pos-salem.appspot.com",
+    messagingSenderId: "633840229756",
+    appId: "1:633840229756:web:5f2b9f7fb5fcc95adf18f9",
+    measurementId: "G-P37T4HW9D8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const dbFS = getFirestore(app);
+
+  window.fsDb = dbFS;
+  window.fsDoc = doc;
+  window.fsSetDoc = setDoc;
+  window.fsGetDoc = getDoc;
+  window.fsOnSnapshot = onSnapshot;
+
+  var usersList = [];
+  var pendingRequests = [];
+
+  window.initAdminSystem = function() {
+      var metaRef = window.fsDoc(window.fsDb, "system", "metadata");
+      window.fsOnSnapshot(metaRef, function(docSnap) {
+          if (docSnap.exists()) {
+              var data = docSnap.data();
+              usersList = Array.isArray(data.usersList) ? data.usersList : [];
+              pendingRequests = Array.isArray(data.pendingRequests) ? data.pendingRequests : [];
+          } else { usersList = []; pendingRequests = []; }
+          if(document.getElementById('VIEW_ADMIN').style.display === 'block') renderAdminPanel();
+      });
+  };
+  window.initAdminSystem();
+
+  window.saveAdminMetadata = function() {
+      var metaRef = window.fsDoc(window.fsDb, "system", "metadata");
+      return window.fsSetDoc(metaRef, { usersList: usersList, pendingRequests: pendingRequests, updatedAt: new Date().toISOString() });
+  };
+
+  window.loginAdmin = function() {
+      var u = document.getElementById('adminUser').value.trim();
+      var p = document.getElementById('adminPass').value.trim();
+      // تم تغيير اسم المستخدم هنا إلى salem3000 بكلمة المرور نفسها
+      if (u === 'salem3000' && p === 's789a456l123e789m00') {
+          document.getElementById('VIEW_LOGIN').style.display = 'none';
+          document.getElementById('VIEW_ADMIN').style.display = 'block';
+          renderAdminPanel();
+      } else {
+          document.getElementById('loginMsg').innerText = 'خطأ في اسم المستخدم أو كلمة المرور!';
+      }
+  };
+
+  window.renderAdminPanel = function() {
+      var reqHtml = '';
+      for (var i = 0; i < pendingRequests.length; i++) {
+          var r = pendingRequests[i];
+          reqHtml += '<div style="background:#fff; padding:12px; margin-bottom:8px; border-radius:8px; border:1px solid #ddd;">';
+          reqHtml += '<b>اسم المحل: ' + r.shop + '</b> | المدير: <b>' + r.u + '</b><br>';
+          reqHtml += 'الجوال: ' + r.phone + ' | الباقة المطلوبة: <span style="color:#0f766e; font-weight:bold;">' + r.package + '</span><br>';
+          if(r.receipt) {
+              reqHtml += '<div style="margin-top:8px"><a href="' + r.receipt + '" target="_blank"><img src="' + r.receipt + '" style="max-height:100px; border-radius:6px; border:1px solid #ccc;"></a></div>';
+          }
+          reqHtml += '<button class="primary" style="margin-top:10px; padding:6px 12px; font-size:13px;" onclick="acceptReq(' + i + ')">موافقة وتفعيل الحساب</button>';
+          reqHtml += '</div>';
+      }
+      document.getElementById('adminRequests').innerHTML = reqHtml || '<div class="muted">لا توجد طلبات اشتراك معلقة</div>';
+      
+      var listHtml = '';
+      for (var i = 0; i < usersList.length; i++) {
+          var usr = usersList[i];
+          var remain = getRemainingDays(usr.expiry);
+          var paused = usr.status === 'paused' || usr.disabled === true;
+          var statusLabel = paused ? '⛔ الحساب موقوف' : (remain === 'منتهي الصلاحية' ? '⚠️ الاشتراك منتهي' : '✅ الحساب مفعّل');
+          listHtml += '<div style="padding:14px 0; border-bottom:1px solid #eee;">';
+          listHtml += '<div style="margin-bottom:9px"><b>' + (usr.shop || 'بدون اسم محل') + '</b> (المدير: <b>' + (usr.u || '—') + '</b>)';
+          listHtml += '<div class="muted" style="color:' + (paused ? '#b91c1c' : '#0f766e') + '">' + statusLabel + ' · ⏳ المدة المتبقية: <b>' + remain + '</b></div>';
+          if (usr.phone) listHtml += '<div class="muted">الجوال: ' + usr.phone + '</div>';
+          listHtml += '</div><div style="display:flex;flex-wrap:wrap;gap:7px">';
+          listHtml += '<button class="primary" style="padding:7px 10px;font-size:12px;width:auto" onclick="renewAccount(' + i + ')">➕ تمديد</button>';
+          listHtml += '<button class="primary" style="padding:7px 10px;font-size:12px;width:auto;background:#2563eb" onclick="editAccount(' + i + ')">✏️ تعديل</button>';
+          listHtml += '<button class="' + (paused ? 'primary' : 'danger') + '" style="padding:7px 10px;font-size:12px;width:auto;' + (paused ? 'background:#0f766e;color:white;' : '') + '" onclick="toggleAccount(' + i + ')">' + (paused ? '▶️ إعادة تفعيل' : '⛔ إيقاف الحساب') + '</button>';
+          listHtml += '<button class="danger" style="padding:7px 10px;font-size:12px" onclick="deleteAccount(' + i + ')">🗑️ حذف</button>';
+          listHtml += '</div></div>';
+      }
+      document.getElementById('adminList').innerHTML = listHtml || '<div class="muted">لا توجد حسابات مسجلة</div>';
+  };
+
+  window.acceptReq = async function(i) {
+      var r = pendingRequests.splice(i, 1)[0];
+      r.expiry = calculateExpiry(r.package);
+      usersList.push(r);
+      await window.saveAdminMetadata();
+      renderAdminPanel();
+      alert('تم تفعيل المحل بنجاح!');
+  };
+
+  window.renewAccount = async function(i) {
+      var pkg = prompt("اختر الباقة الجديدة للتجديد:\n1. 6 شهور - 50 ريال سعودي\n2. سنة - 90 ريال سعودي", "سنة - 90 ريال سعودي");
+      if(!pkg) return;
+      usersList[i].expiry = calculateExpiry(pkg, usersList[i].expiry);
+      await window.saveAdminMetadata();
+      renderAdminPanel();
+      alert('تم تجديد اشتراك المحل بنجاح!');
+  };
+
+  window.toggleAccount = async function(i) {
+      var usr = usersList[i];
+      if (!usr) return;
+      var paused = usr.status === 'paused' || usr.disabled === true;
+      if (paused) {
+          if (!confirm('هل تريد إعادة تفعيل حساب ' + (usr.shop || usr.u || '') + '؟')) return;
+          usr.status = 'active';
+          usr.disabled = false;
+      } else {
+          if (!confirm('سيتم إيقاف دخول هذا المحل حتى تعيد تفعيله. هل تريد المتابعة؟')) return;
+          usr.status = 'paused';
+          usr.disabled = true;
+      }
+      await window.saveAdminMetadata();
+      renderAdminPanel();
+      alert(paused ? 'تمت إعادة تفعيل الحساب.' : 'تم إيقاف الحساب.');
+  };
+
+  window.deleteAccount = async function(i) {
+      var usr = usersList[i];
+      if (!usr) return;
+      if (!confirm('تأكيد حذف حساب المحل: ' + (usr.shop || usr.u || '') + '؟ لا يمكن التراجع عن الحذف.')) return;
+      usersList.splice(i, 1);
+      await window.saveAdminMetadata();
+      renderAdminPanel();
+      alert('تم حذف الحساب من قائمة الاشتراكات.');
+  };
+
+  window.editAccount = async function(i) {
+      var usr = usersList[i];
+      if (!usr) return;
+      var shop = prompt('اسم المحل:', usr.shop || '');
+      if (shop === null) return;
+      var username = prompt('اسم المستخدم الخاص بالمحل:', usr.u || '');
+      if (username === null) return;
+      var phone = prompt('رقم الجوال:', usr.phone || '');
+      if (phone === null) return;
+      if (!shop.trim() || !username.trim()) { alert('اسم المحل واسم المستخدم مطلوبان.'); return; }
+      var duplicate = usersList.some(function(x, idx) { return idx !== i && String(x.u || '').toLowerCase() === username.trim().toLowerCase(); });
+      if (duplicate) { alert('اسم المستخدم مستخدم لحساب آخر.'); return; }
+      usr.shop = shop.trim();
+      usr.u = username.trim();
+      usr.phone = phone.trim();
+      await window.saveAdminMetadata();
+      renderAdminPanel();
+      alert('تم حفظ تعديلات الحساب.');
+  };
+
+  function calculateExpiry(pkgStr, currentExpiryIso) {
+      var d = currentExpiryIso && new Date(currentExpiryIso) > new Date() ? new Date(currentExpiryIso) : new Date();
+      if(pkgStr.indexOf('6 شهور') > -1) d.setMonth(d.getMonth() + 6);
+      else if(pkgStr.indexOf('سنة') > -1) d.setFullYear(d.getFullYear() + 1);
+      else d.setFullYear(d.getFullYear() + 1);
+      return d.toISOString();
+  }
+
+  function getRemainingDays(expiryIso) {
+      if (!expiryIso) return 'مفتوح';
+      var diffTime = new Date(expiryIso) - new Date();
+      var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) return 'منتهي الصلاحية';
+      return diffDays + ' يوم متبقي';
+  }
+</script>
+</body>
+</html>
