@@ -1498,11 +1498,13 @@ function formatStockQuantity(product) {
 function renderStock(q) {
     var el = document.getElementById('stockList');
     if(!el) return;
-    var term = (q || '').trim().toLowerCase();
+    var terms = String(q || '').trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
     var html = '';
     for(var i=0; i<db.products.length; i++) {
         var p = db.products[i];
-        if(!term || (p.name + ' ' + p.barcode).toLowerCase().indexOf(term) > -1) {
+        var searchable=(String(p.name||'')+' '+String(p.barcode||'')).toLocaleLowerCase();
+        var matchesAll=terms.every(function(term){return searchable.indexOf(term)!==-1;});
+        if(!terms.length || matchesAll) {
             html += '<div class="product">';
             html += '<div style="flex:1;">';
             html += '<b>' + p.name + '</b>';
