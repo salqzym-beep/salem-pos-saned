@@ -13,7 +13,7 @@ import android.graphics.Color
 class MainActivity : Activity() {
     private lateinit var web: WebView
     private lateinit var status: TextView
-    private val home = "https://possanad-sah-buyervercelapp.vercel.app/"
+    private val home = "https://possanad.vercel.app/"
 
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
