@@ -292,16 +292,20 @@ body.desktop-mode .golden-fields{grid-template-columns:repeat(3,minmax(0,1fr))}
 body.desktop-mode .golden-bottom{grid-template-columns:minmax(300px,1fr) minmax(340px,1fr)}
 body.desktop-mode #modal .sale-modal{overflow:auto;align-items:flex-start}
 body.desktop-mode #modal .sale-sheet{margin:auto}
-@media (orientation:portrait) and (max-width:900px){
- body.desktop-mode #modal:has(.golden-invoice)::before,
- body.desktop-mode #modal:has(.invoice-sheet)::before{
-   content:"↻\A قم بتدوير الهاتف إلى الوضع الأفقي\A لتظهر الفاتورة بتخطيط سطح المكتب";
-   white-space:pre-line;text-align:center;display:flex;align-items:center;justify-content:center;
-   position:fixed;inset:0;z-index:1000000;background:rgba(12,29,48,.97);color:#fff;
-   font-size:clamp(22px,5vw,32px);font-weight:900;line-height:2;padding:24px
- }
+@media (max-width:900px){
  body.desktop-mode .header-actions{gap:4px!important}
  body.desktop-mode .display-mode-switch button{font-size:10px;padding:7px 6px}
+ body.desktop-mode #modal .sale-modal{padding:4px;align-items:flex-start;overflow:auto}
+ body.desktop-mode #modal .sale-sheet{min-width:0!important;width:100%;max-width:100%;margin:0}
+ body.desktop-mode #modal .golden-invoice,
+ body.desktop-mode #modal .invoice-sheet{min-width:0!important;width:100%;max-width:100%}
+ body.desktop-mode #modal .golden-info-grid{grid-template-columns:1fr}
+ body.desktop-mode #modal .golden-side{display:none}
+ body.desktop-mode #modal .golden-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.desktop-mode #modal .golden-bottom{grid-template-columns:1fr}
+ body.desktop-mode #modal .golden-table-wrap{height:42vh;overflow:auto}
+ body.desktop-mode #modal .golden-table{min-width:720px}
+ body.desktop-mode #modal .invoice-items{overflow-x:auto}
 }
 @media(max-width:520px){
  .header-actions{justify-content:flex-start}
