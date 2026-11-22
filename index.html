@@ -1571,7 +1571,49 @@ function setPurchasePaymentType(type){
     if(supplierLabel) supplierLabel.textContent=type==='credit'?'المورد (إلزامي للشراء الآجل)':'المورد (اختياري للشراء النقدي)';
 }
 
-function openPurchaseModal(editId) {
+function openPurchaseModal(editId){return isDesktopInvoiceMode()?openPurchaseModalDesktop(editId):openPurchaseModalNormal(editId);}
+function openPurchaseModalNormal(editId) {
+    purchaseCart = [];
+    editingPurchaseId = null;
+    purchasePaymentType = 'cash';
+    var purNumVal = '';
+    
+    if (editId) {
+        var pur = (db.purchases || []).find(function(x){ return x.id === editId; });
+        if (pur) {
+            editingPurchaseId = pur.id;
+            purNumVal = pur.num;
+            purchaseCart = JSON.parse(JSON.stringify(pur.items));
+            purchasePaymentType = pur.paymentType || 'credit';
+        }
+    }
+
+    var h = '<div class="sale-modal"><div class="sale-sheet">';
+    h += '<h2 style="margin-top:0; color:#0f766e; text-align:center">' + (editId ? '📦 تعديل فاتورة شراء' : '📦 إضافة فاتورة شراء جديدة') + '</h2>';
+    h += '<label class="box-label" id="purSupplierLabel">المورد (اختياري للشراء النقدي)</label><input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + ((editId && (db.purchases||[]).find(function(x){return x.id===editId;}) || {}).supplier || '') + '" placeholder="اكتب اسم المورد فقط...">' + '<datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name).replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
+    h += '<label class="box-label">رقم الفاتورة</label><input id="purNum" class="input" value="' + purNumVal + '" placeholder="رقم الفاتورة...">';
+    h += '<label class="box-label">نوع الدفع</label><div class="row" style="gap:8px;margin:6px 0 12px"><button id="purPayCash" type="button" style="flex:1;background:#0f766e;color:white" onclick="setPurchasePaymentType(\'cash\')">💵 نقداً</button><button id="purPayCredit" type="button" style="flex:1;background:#e5e7eb;color:#111827" onclick="setPurchasePaymentType(\'credit\')">🧾 آجل</button></div>';
+    h += '<div style="margin:10px 0;"><label class="box-label">إضافة منتج للمشتريات</label>';
+    h += '<div style="margin-bottom:8px"><label class="box-label">الباركود</label><div class="row"><input id="purItemBarcode" class="input" autocomplete="off" placeholder="امسح أو أدخل الباركود" oninput="lookupPurchaseBarcodeIfFound(this.value)" onchange="lookupPurchaseBarcode(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();lookupPurchaseBarcode(this.value)}"><button class="light" type="button" onclick="startCameraScanner(\'purItemBarcode\')">📷 تصوير بالكاميرا</button></div></div>';
+    h += '<div class="row purchase-fields" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;"><input id="purItemName" class="input" list="purProductNamesList" autocomplete="off" oninput="lookupPurchaseProductByName()" onchange="lookupPurchaseProductByName()" style="font-size:18px;min-height:52px;flex:1 1 100%" placeholder="اكتب اسم المنتج وستظهر الأصناف المحفوظة"><datalist id="purProductNamesList">' + (db.products||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist><select id="purItemUnit" class="input" style="font-size:18px;min-height:52px;flex:1 1 100%" onchange="togglePurchasePackFields()"><option value="حبة">حبة</option><option value="كرتون">كرتون</option><option value="كيس">كيس</option></select><input id="purItemPackSize" class="input" style="font-size:18px;min-height:52px;flex:1 1 100%" type="number" min="1" value="12" placeholder="عدد الحبات داخل الكرتون"><input id="purItemQty" class="input" type="number" placeholder="الكمية (عدد الكراتين/الحبات/الأكياس)" style="font-size:20px;font-weight:800;min-height:52px;flex:1 1 100%"><input id="purItemCost" class="input" style="font-size:18px;min-height:52px;flex:1 1 100%" type="number" placeholder="سعر شراء الوحدة المختارة"></div><div class="muted" id="purPackHint">اكتب اسم المنتج أو اختره من الاقتراحات؛ ستظهر العبوة وعدد الوحدات تلقائياً.</div>';
+    h += '<button class="primary" style="width:100%; margin-top:4px;" onclick="addPurchaseItemToList()">＋ إضافة للصنف بالقائمة</button></div>';
+    
+    var itemsListHtml = '';
+    for(var i=0; i<purchaseCart.length; i++) {
+        itemsListHtml += '<div style="display:flex; justify-content:space-between; align-items:center; padding:4px; border-bottom:1px solid #eee;"><span>' + purchaseCart[i].name + ' (' + (purchaseCart[i].enteredQty||purchaseCart[i].qty) + ' ' + (purchaseCart[i].unit||'حبة') + ') - ' + money(purchaseCart[i].total) + '</span><button class="danger" style="padding:4px 8px; font-size:11px;" onclick="removePurchaseCartItem(' + i + ')">حذف</button></div>';
+    }
+    if(itemsListHtml === '') itemsListHtml = '<div class="muted" style="text-align:center;">القائمة فارغة</div>';
+
+    h += '<div id="purItemsContainer" style="max-height:20vh; overflow-y:auto; border:1px solid #ddd; padding:8px; border-radius:8px; margin-bottom:10px;">' + itemsListHtml + '</div>';
+    h += '<button class="primary" style="width:100%; font-weight:bold; margin-bottom:8px;" onclick="savePurchaseInvoice()">حفظ وترحيل الفاتورة للمخزون</button>';
+    h += '<div class="row" style="gap:8px"><button class="primary" style="flex:1" onclick="savePurchaseInvoice()">💾 حفظ الفاتورة</button><button class="light" style="flex:1" onclick="savePurchaseInvoice(\'back\')">↩ رجوع وحفظ</button></div>';
+    h += '</div></div>';
+    document.getElementById('modal').innerHTML = h;
+    setPurchasePaymentType(purchasePaymentType);
+}
+
+
+function openPurchaseModalDesktop(editId) {
     purchaseCart = [];
     editingPurchaseId = null;
     purchasePaymentType = 'cash';
@@ -1613,6 +1655,7 @@ function openPurchaseModal(editId) {
     togglePurchasePackFields();
     setPurchasePaymentType(purchasePaymentType);
 }
+
 function renderPurchaseCartRows() {
     if(!purchaseCart.length)return '<tr><td colspan="8" class="invoice-empty">أضف الأصناف إلى الفاتورة</td></tr>';
     return purchaseCart.map(function(item,i){
@@ -1720,8 +1763,14 @@ function removePurchaseCartItem(index) {
     refreshPurchaseCartContainer();
 }
 
+function renderPurchaseCartRowsNormal(){
+    if(!purchaseCart.length)return '<div class="muted" style="text-align:center;padding:14px">القائمة فارغة</div>';
+    return purchaseCart.map(function(item,i){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px;border-bottom:1px solid #e5e7eb"><span>'+escapeInvoiceText(item.name)+' ('+Number(item.enteredQty||item.qty||0)+' '+escapeInvoiceText(item.unit||'حبة')+') - '+money(item.total)+'</span><button class="danger" style="padding:5px 9px" onclick="removePurchaseCartItem('+i+')">حذف</button></div>';
+    }).join('');
+}
 function refreshPurchaseCartContainer() {
-    var box=document.getElementById('purItemsContainer');if(box)box.innerHTML=renderPurchaseCartRows();
+    var box=document.getElementById('purItemsContainer');if(box)box.innerHTML=isDesktopInvoiceMode()?renderPurchaseCartRows():renderPurchaseCartRowsNormal();
     var count=document.getElementById('purItemCount');if(count)count.textContent=String(purchaseCart.length);
     var total=purchaseCart.reduce(function(a,x){return a+Number(x.total||0);},0);
     var grand=document.getElementById('purGrandTotal');if(grand)grand.value=total;
@@ -1857,7 +1906,49 @@ function saleUnitOptions(product, currentUnit, cartIndex) {
             unit + ' — ' + money(unitPrice) + (unit === 'حبة' ? '' : ' (' + factor + ' حبة)') + '</option>';
     }).join('');
 }
-function renderSaleModalContent() {
+function isDesktopInvoiceMode(){try{return localStorage.getItem('sanadDisplayMode')==='desktop';}catch(e){return false;}}
+function renderSaleModalContent(){return isDesktopInvoiceMode()?renderSaleModalContentDesktop():renderSaleModalContentNormal();}
+function renderSaleModalContentNormal() {
+    var subtotal = 0; var itemsHtml = '';
+    for(var i=0; i<db.cart.length; i++) {
+        var c = db.cart[i]; var itemTotal = Number(c.sell||0) * Number(c.qty||0); subtotal += itemTotal;
+        var pForCart = db.products.find(function(x){ return x.id === c.id; }) || {};
+        var packSizeForCart = Math.max(1, Number(pForCart.packSize||1));
+        itemsHtml += '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px; margin-bottom:8px;">';
+        itemsHtml += '<div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;"><span>' + c.name + '</span><span>' + money(itemTotal) + '</span></div>';
+        itemsHtml += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">';
+        itemsHtml += '<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><label>نوع البيع:</label><select class="input" style="width:auto;min-height:48px;padding:8px;font-size:16px;font-weight:700" onchange="updateCartUnit(' + i + ',this.value)"><option value="حبة" ' + ((c.unit||'حبة')==='حبة'?'selected':'') + '>حبة (' + money(pForCart.sell||c.sell) + ')</option>' + ((pForCart.packType && pForCart.packType!=='حبة') ? '<option value="' + pForCart.packType + '" ' + (c.unit===pForCart.packType?'selected':'') + '>' + pForCart.packType + ' (' + money(pForCart.packSell||((pForCart.sell||c.sell)*(pForCart.packType==='كرتون'?packSizeForCart:1))) + ')</option>' : '') + '</select><label>سعر البيع:</label><input type="number" class="input" style="width:110px;min-height:52px;padding:8px;text-align:center;font-size:18px;font-weight:800" min="0" step="any" value="' + Number(c.sell||0) + '" onchange="updateCartSell(' + i + ',this.value)"><label>العدد:</label><input type="number" class="input" style="width:95px;min-height:52px;padding:8px;text-align:center;font-size:20px;font-weight:800" min="1" value="' + c.qty + '" onchange="updateCartQty(' + i + ', this.value)"></div>';
+        itemsHtml += '<button class="danger" style="padding:6px 10px; font-size:12px;" onclick="removeSaleCart(' + i + ')">حذف</button>';
+        itemsHtml += '</div></div>';
+    }
+    if(itemsHtml === '') itemsHtml = '<div class="muted" style="text-align:center; padding:20px">السلة فارغة</div>';
+
+    var currentDiscount = Number(document.getElementById('saleDiscount') ? document.getElementById('saleDiscount').value : 0);
+    var finalTotal = Math.max(0, subtotal - currentDiscount);
+
+    var h = '<div class="sale-modal"><div class="sale-sheet">';
+    h += '<h2 style="margin-top:0; color:#0f766e; text-align:center">🧾 فاتورة بيع جديدة</h2>';
+    h += '<div style="margin-bottom:10px"><label class="box-label">اسم العميل (اختياري للنقد أو إجباري للآجل)</label><input id="saleCustomer" class="input" placeholder="أدخل اسم العميل..."></div>';
+    h += '<div style="margin-bottom:12px"><button class="light" style="width:100%; margin-bottom:6px; font-weight:bold" onclick="startCameraScanner(\'saleBarcodeInp\')">📷 مسح الباركود بالكاميرا</button>';
+    h += '<div class="row"><input id="saleBarcodeInp" class="input" autocomplete="off" placeholder="اكتب اسم الصنف أو بعض حروفه..." oninput="renderSaleProductSuggestions(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addModalItemByBarcode(this.value)}"><button class="primary" style="padding:12px;" onclick="addModalItemByBarcode(document.getElementById(\'saleBarcodeInp\').value)">إضافة</button></div><div id="saleProductSuggestions" style="display:none;max-height:180px;overflow:auto;border:1px solid #cbd5e1;border-radius:10px;margin-top:5px;background:white;"></div></div>';
+    h += '<div style="max-height:30vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:12px; padding:8px; margin-bottom:12px">' + itemsHtml + '</div>';
+    h += '<div class="grid" style="margin-bottom:10px;">';
+    h += '<div><label class="box-label">نوع الدفع</label><select id="saleType" class="input"><option value="نقد">نقداً</option><option value="آجل">آجل (دين)</option></select></div>';
+    h += '<div><label class="box-label">مبلغ الخصم ' + (!isManager ? '<span style="color:#b91c1c; font-size:11px;">(أقصى حد '+Number(getCurrentWorker().discountLimitPercent===undefined?5:getCurrentWorker().discountLimitPercent)+'%)</span>' : '') + '</label><input id="saleDiscount" class="input" type="number" value="' + currentDiscount + '" oninput="renderSaleModalContentNormal()" placeholder="0"></div>';
+    h += '</div>';
+    
+    h += '<div style="display:flex; justify-content:space-between; font-size:18px; font-weight:900; background:#f8fafc; padding:12px; border-radius:12px; margin-bottom:15px"><span>الإجمالي النهائي:</span><span style="color:#0f766e">' + money(finalTotal) + '</span></div>';
+    h += '<div class="row" style="margin-bottom:8px">';
+    h += '<button class="primary" style="font-size:14px; font-weight:bold" onclick="checkoutSale(\'thermal\')">🖨️ طباعة حرارية (فورية)</button>';
+    h += '<button class="dark" style="font-size:14px; font-weight:bold" onclick="checkoutSale(\'pdf\')">📄 حفظ وإرسال PDF</button>';
+    h += '</div>';
+    h += '<div class="row" style="gap:8px"><button class="primary" style="flex:1" onclick="saveSaleAndContinue(\'back\')">💾 حفظ والرجوع</button><button class="danger" style="flex:1" onclick="closeModal()">إلغاء</button></div>';
+    h += '</div></div>';
+    document.getElementById('modal').innerHTML = h;
+}
+
+
+function renderSaleModalContentDesktop() {
     var subtotal=0, itemsHtml='';
     var customerValue=document.getElementById('saleCustomer')?document.getElementById('saleCustomer').value:'';
     var typeValue=document.getElementById('saleType')?document.getElementById('saleType').value:'نقد';
@@ -1914,6 +2005,7 @@ function setSaleFinalTotal(value){
     var d=document.getElementById('saleDiscount');if(d)d.value=subtotal-finalValue;
     renderSaleTotalsOnly();
 }
+
 function focusInvoiceItem(index) {
     var cards = document.querySelectorAll('.invoice-line');
     if(cards[index]) { cards[index].scrollIntoView({behavior:'smooth',block:'center'}); cards[index].classList.add('invoice-line-selected'); }
