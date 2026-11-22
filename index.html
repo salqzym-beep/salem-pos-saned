@@ -1674,9 +1674,12 @@ function refreshPurchaseCartContainer() {
 function setPurchaseGrandTotal(value){
     var desired=Number(value),current=purchaseCart.reduce(function(a,x){return a+Number(x.total||0);},0);
     if(!isFinite(desired)||desired<0||!purchaseCart.length){alert('أدخل إجمالياً صحيحاً بعد إضافة الأصناف');refreshPurchaseCartContainer();return;}
-    var last=purchaseCart[purchaseCart.length-1],qty=Number(last.enteredQty||last.qty||1);
-    last.cost=Math.max(0,Number(last.cost||0)+(desired-current)/qty);
-    last.total=last.cost*qty;refreshPurchaseCartContainer();
+    var ratio=current>0?desired/current:0;
+    purchaseCart.forEach(function(item){
+        item.total=Number(item.total||0)*ratio;
+        item.cost=Number(item.enteredQty||item.qty||1)>0?item.total/Number(item.enteredQty||item.qty||1):0;
+    });
+    refreshPurchaseCartContainer();
 }
 function savePurchaseInvoice(mode) {
     var purNum = document.getElementById('purNum').value.trim() || ('PUR-' + Date.now());
@@ -1931,6 +1934,8 @@ function checkoutSale(printMode) {
     if(!db.cart || db.cart.length === 0) return toast('السلة فارغة!');
     var saleType = document.getElementById('saleType').value;
     var customerName = document.getElementById('saleCustomer').value.trim() || (saleType === 'آجل' ? 'زبون آجل' : 'نقدي');
+    var invoiceDateValue=document.getElementById('saleInvoiceDate')?document.getElementById('saleInvoiceDate').value:'';
+    var saleDateValue=invoiceDateValue?new Date(invoiceDateValue+'T12:00:00').toISOString():new Date().toISOString();
     var discount = Number(document.getElementById('saleDiscount').value || 0);
     
     var subtotal = 0;
@@ -1995,7 +2000,7 @@ function checkoutSale(printMode) {
     
     db.sales.push({ 
         id: Date.now(), 
-        date: new Date().toISOString(), 
+        date: saleDateValue, 
         type: saleType, 
         customer: customerName, 
         worker: currentUser,
