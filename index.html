@@ -165,6 +165,10 @@ body{background:var(--paper);color:var(--ink)}
 .purchase-entry-grid .row{gap:6px}
 .purchase-entry-grid .row>*:first-child{min-width:0}
 .purchase-add-button{margin-top:12px;min-height:46px;font-weight:900}
+.sale-columns{grid-template-columns:minmax(160px,2fr) .7fr .7fr .9fr .9fr 64px}
+.sale-columns+ #invoiceItemsList .invoice-line{display:block}
+.sale-columns+ #invoiceItemsList .invoice-item-name{width:100%;padding:0 0 8px}
+.sale-columns+ #invoiceItemsList .invoice-item-fields{grid-template-columns:minmax(100px,1fr) .7fr .9fr .9fr 64px}
 .purchase-columns{grid-template-columns:minmax(160px,2fr) .7fr .7fr .9fr .9fr 64px}
 .purchase-line{display:grid;grid-template-columns:minmax(160px,2fr) .7fr .7fr .9fr .9fr 64px;gap:8px;align-items:center}
 .purchase-item-title{color:#173f68;overflow-wrap:anywhere}
@@ -180,6 +184,8 @@ body{background:var(--paper);color:var(--ink)}
  .purchase-entry-grid .purchase-name-field{grid-column:1/-1}
  .invoice-column-head{display:none}
  .purchase-line{grid-template-columns:1fr 1fr;gap:7px;padding:12px}
+ .sale-columns{display:none}
+ .sale-columns+ #invoiceItemsList .invoice-item-fields{grid-template-columns:1fr 1fr;gap:8px}
  .purchase-item-title{grid-column:1/-1;font-size:16px}
  .purchase-barcode{grid-column:1/-1}
  .purchase-total{font-size:17px;color:#173f68}
@@ -1426,12 +1432,10 @@ var purchasePaymentType = 'cash';
 function setPurchasePaymentType(type){
     purchasePaymentType = type;
     var cashBtn=document.getElementById('purPayCash'), creditBtn=document.getElementById('purPayCredit');
-    if(cashBtn) cashBtn.style.background=type==='cash'?'#0f766e':'#e5e7eb';
-    if(cashBtn) cashBtn.style.color=type==='cash'?'white':'#111827';
-    if(creditBtn) creditBtn.style.background=type==='credit'?'#b45309':'#e5e7eb';
-    if(creditBtn) creditBtn.style.color=type==='credit'?'white':'#111827';
+    if(cashBtn) cashBtn.classList.toggle('selected',type==='cash');
+    if(creditBtn) creditBtn.classList.toggle('selected',type==='credit');
     var supplierLabel=document.getElementById('purSupplierLabel');
-    if(supplierLabel) supplierLabel.innerHTML=type==='credit'?'المورد (إلزامي للشراء الآجل)':'المورد (اختياري للشراء النقدي)';
+    if(supplierLabel) supplierLabel.textContent=type==='credit'?'المورد (إلزامي للشراء الآجل)':'المورد (اختياري للشراء النقدي)';
 }
 
 function openPurchaseModal(editId) {
@@ -1454,7 +1458,7 @@ function openPurchaseModal(editId) {
     h += '<div class="invoice-head"><div><div class="invoice-kicker">سند للمحاسبة</div><h2>' + (editId ? 'فاتورة مشتريات' : 'فاتورة مشتريات جديدة') + '</h2><div class="muted">إدخال المشتريات وترحيلها للمخزون</div></div>';
     h += '<button class="light" type="button" onclick="closeModal();show(\'purchases\')">↩ رجوع</button></div>';
     h += '<div class="invoice-customer-grid purchase-head-grid">';
-    h += '<label>اسم المورد<input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + safeSupplier + '" placeholder="اسم المورد (مطلوب للشراء الآجل)"></label><datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
+    h += '<label id="purSupplierLabel">اسم المورد<input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + safeSupplier + '" placeholder="اسم المورد (مطلوب للشراء الآجل)"></label><datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
     h += '<label>رقم فاتورة المورد<input id="purNum" class="input" value="' + String(purNumVal).replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '" placeholder="يُنشأ تلقائياً إذا تركته فارغاً"></label></div>';
     h += '<div class="invoice-add-panel"><div class="invoice-add-title">بيانات الصنف المراد إضافته</div>';
     h += '<div class="purchase-entry-grid">';
@@ -1723,7 +1727,7 @@ function renderSaleModalContent() {
     h += '<div class="invoice-search-row"><input id="saleBarcodeInp" class="input" autocomplete="off" placeholder="ابحث باسم الصنف أو أدخل رقم الباركود..." oninput="renderSaleProductSuggestions(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addModalItemByBarcode(this.value)}">';
     h += '<button class="primary" onclick="addModalItemByBarcode(document.getElementById(\'saleBarcodeInp\').value)">＋ إضافة</button><button class="light" onclick="startCameraScanner(\'saleBarcodeInp\')">📷 قراءة الباركود</button></div>';
     h += '<div id="saleProductSuggestions" class="invoice-suggestions" style="display:none"></div></section>';
-    h += '<div class="invoice-table-wrap"><div class="invoice-table-heading"><span>الصنف وتفاصيله</span><span>الإجمالي</span></div><div id="invoiceItemsList">' + itemsHtml + '</div></div>';
+    h += '<div class="invoice-table-wrap"><div class="invoice-table-heading"><span>تفاصيل أصناف المبيعات</span><span>الإجمالي</span></div><div class="invoice-column-head sale-columns"><span>الصنف</span><span>الوحدة</span><span>الكمية</span><span>سعر الوحدة</span><span>الإجمالي</span><span></span></div><div id="invoiceItemsList">' + itemsHtml + '</div></div>';
     h += '<div class="invoice-bottom"><label>الخصم<input id="saleDiscount" class="input invoice-number" type="number" min="0" value="' + currentDiscount + '" oninput="renderSaleTotalsOnly()"></label>';
     h += '<div class="invoice-totals"><div><span>الإجمالي قبل الخصم</span><strong id="invoiceSubtotal">' + money(subtotal) + '</strong></div><div><span>الصافي المطلوب</span><strong class="invoice-grand-total" id="invoiceGrandTotal">' + money(finalTotal) + '</strong></div></div></div>';
     h += '<div class="invoice-actions"><button class="primary" onclick="saveSaleAndContinue(\'new\')">💾 حفظ الفاتورة + فاتورة جديدة</button>';
