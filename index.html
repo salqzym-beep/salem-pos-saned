@@ -201,29 +201,30 @@ body{background:var(--paper);color:var(--ink)}
 
 /* Invoice remains usable in portrait; desktop mode expands within the current screen. */
 @media screen and (max-width:900px) and (orientation:landscape){
- .invoice-fullscreen{overflow:auto}
- .invoice-sheet{width:100%;min-width:760px;min-height:100vh;padding:12px 16px}
- .invoice-head{padding-bottom:8px}
- .invoice-customer-grid{grid-template-columns:1.5fr 1fr;margin:8px 0}
- .invoice-add-panel{margin:8px 0;padding:9px}
- .invoice-add-title{margin-bottom:6px}
- .invoice-search-row{grid-template-columns:minmax(220px,1fr) auto auto}
- .invoice-column-head,.purchase-columns{display:grid}
- .sale-columns{grid-template-columns:minmax(190px,2fr) .8fr .7fr .9fr .9fr 58px}
- .sale-columns+#invoiceItemsList .invoice-line{display:grid;grid-template-columns:minmax(190px,2fr) minmax(0,4fr);gap:8px;align-items:center}
- .sale-columns+#invoiceItemsList .invoice-item-name{grid-column:1;margin:0;padding:4px;text-align:right}
- .sale-columns+#invoiceItemsList .invoice-item-fields{grid-column:2;display:grid;grid-template-columns:.8fr .7fr .9fr .9fr 58px;gap:6px;align-items:center}
- .sale-columns+#invoiceItemsList .invoice-item-fields label{font-size:11px;gap:3px}
- .sale-columns+#invoiceItemsList .invoice-item-fields .input{padding:6px;min-height:34px}
- .invoice-bottom{grid-template-columns:180px 1fr;margin:8px 0}
- .invoice-actions{grid-template-columns:2fr 1fr 1fr;gap:8px}
- .invoice-actions button{min-height:40px}
- .purchase-entry-grid{grid-template-columns:1fr 1.5fr .65fr .7fr .65fr .8fr}
- .purchase-line{grid-template-columns:minmax(190px,2fr) .7fr .7fr .8fr .9fr 58px;padding:8px 12px}
- .purchase-product-cell{min-width:0}
- .purchase-actions{grid-template-columns:2fr 1fr}
-}
 
+ body.desktop-mode .invoice-fullscreen{overflow:auto}
+ body.desktop-mode .invoice-sheet{width:100%;min-width:760px;min-height:100vh;padding:12px 16px}
+ body.desktop-mode .invoice-head{padding-bottom:8px}
+ body.desktop-mode .invoice-customer-grid{grid-template-columns:1.5fr 1fr;margin:8px 0}
+ body.desktop-mode .invoice-add-panel{margin:8px 0;padding:9px}
+ body.desktop-mode .invoice-add-title{margin-bottom:6px}
+ body.desktop-mode .invoice-search-row{grid-template-columns:minmax(220px,1fr) auto auto}
+ body.desktop-mode .invoice-column-head, body.desktop-mode .purchase-columns{display:grid}
+ body.desktop-mode .sale-columns{grid-template-columns:minmax(190px,2fr) .8fr .7fr .9fr .9fr 58px}
+ body.desktop-mode .sale-columns+#invoiceItemsList .invoice-line{display:grid;grid-template-columns:minmax(190px,2fr) minmax(0,4fr);gap:8px;align-items:center}
+ body.desktop-mode .sale-columns+#invoiceItemsList .invoice-item-name{grid-column:1;margin:0;padding:4px;text-align:right}
+ body.desktop-mode .sale-columns+#invoiceItemsList .invoice-item-fields{grid-column:2;display:grid;grid-template-columns:.8fr .7fr .9fr .9fr 58px;gap:6px;align-items:center}
+ body.desktop-mode .sale-columns+#invoiceItemsList .invoice-item-fields label{font-size:11px;gap:3px}
+ body.desktop-mode .sale-columns+#invoiceItemsList .invoice-item-fields .input{padding:6px;min-height:34px}
+ body.desktop-mode .invoice-bottom{grid-template-columns:180px 1fr;margin:8px 0}
+ body.desktop-mode .invoice-actions{grid-template-columns:2fr 1fr 1fr;gap:8px}
+ body.desktop-mode .invoice-actions button{min-height:40px}
+ body.desktop-mode .purchase-entry-grid{grid-template-columns:1fr 1.5fr .65fr .7fr .65fr .8fr}
+ body.desktop-mode .purchase-line{grid-template-columns:minmax(190px,2fr) .7fr .7fr .8fr .9fr 58px;padding:8px 12px}
+ body.desktop-mode .purchase-product-cell{min-width:0}
+ body.desktop-mode .purchase-actions{grid-template-columns:2fr 1fr}
+
+}
 
 /* تصميم فاتورة مكتبية قريب من مرجع Golden Acc */
 .golden-invoice{background:#e7edf4!important;padding:8px!important;color:#17202a}
@@ -1569,6 +1570,8 @@ function setPurchasePaymentType(type){
     if(creditBtn) creditBtn.classList.toggle('selected',type==='credit');
     var supplierLabel=document.getElementById('purSupplierLabelText');
     if(supplierLabel) supplierLabel.textContent=type==='credit'?'المورد (إلزامي للشراء الآجل)':'المورد (اختياري للشراء النقدي)';
+    var legacySupplierLabel=document.getElementById('purSupplierLabel');
+    if(legacySupplierLabel) legacySupplierLabel.textContent=type==='credit'?'المورد (إلزامي للشراء الآجل)':'المورد (اختياري للشراء النقدي)';
 }
 
 function openPurchaseModal(editId){return isDesktopInvoiceMode()?openPurchaseModalDesktop(editId):openPurchaseModalNormal(editId);}
@@ -2078,6 +2081,14 @@ function addModalItemByBarcode(code) {
     toast('تمت الإضافة');
 }
 
+function saveSaleAndContinue(mode){
+    if(!db.cart||!db.cart.length){
+        if(mode==='back'){closeModal();show(window.saleReturnView||'home');}
+        else {db.cart=[];renderSaleModalContent();}
+        return;
+    }
+    checkoutSale(mode==='back'?'back':mode==='new'?'new':'stay');
+}
 function checkoutSale(printMode) {
     if(!db.cart || db.cart.length === 0) return toast('السلة فارغة!');
     var saleType = document.getElementById('saleType').value;
