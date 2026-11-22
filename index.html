@@ -1214,6 +1214,19 @@ function updateProduct(id) {
     toast('تم تعديل المنتج بنجاح');
 }
 
+function formatStockQuantity(product) {
+    var qty = Math.max(0, Number(product.qty || 0));
+    var unit = String(product.packType || 'حبة');
+    if(unit === 'كيس') return qty + ' كيس';
+    if(unit === 'حبة') return qty + ' حبة';
+    var packSize = Math.max(1, Number(product.packSize || 1));
+    var cartons = Math.floor(qty / packSize);
+    var remainder = qty % packSize;
+    var label = cartons + ' كرتون (' + packSize + ' حبة للكرتون)';
+    if(remainder > 0) label += ' + ' + remainder + ' حبة';
+    return label;
+}
+
 function renderStock(q) {
     var el = document.getElementById('stockList');
     if(!el) return;
@@ -1226,9 +1239,9 @@ function renderStock(q) {
             html += '<div style="flex:1;">';
             html += '<b>' + p.name + '</b>';
             if(isManager) {
-                html += '<div class="muted">شراء: ' + money(p.buy) + ' | بيع: ' + money(p.sell) + ' | المخزون: <b>' + (p.packType==='كيس' ? p.qty + ' كيس' : p.qty + ' حبة (' + Math.floor(p.qty/(p.packSize||1)) + ' ' + (p.packType||'كرتون') + ' + ' + (p.qty%(p.packSize||1)) + ' حبة)') + '</b></div>';
+                html += '<div class="muted">شراء: ' + money(p.buy) + ' | بيع: ' + money(p.sell) + ' | المخزون: <b>' + formatStockQuantity(p) + '</b></div>';
             } else {
-                html += '<div class="muted">سعر البيع: ' + money(p.sell) + ' | المتبقي: <b style="color:#0f766e">' + (p.packType==='كيس' ? p.qty + ' كيس' : p.qty + ' حبة (' + Math.floor(p.qty/(p.packSize||1)) + ' ' + (p.packType||'كرتون') + ')') + '</b></div>';
+                html += '<div class="muted">سعر البيع: ' + money(p.sell) + ' | المتبقي: <b style="color:#0f766e">' + formatStockQuantity(p) + '</b></div>';
             }
             html += '</div>';
             html += '<div style="display:flex; gap:6px; flex-wrap:wrap;">';
