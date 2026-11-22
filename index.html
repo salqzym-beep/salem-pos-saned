@@ -198,6 +198,36 @@ body{background:var(--paper);color:var(--ink)}
 }
 @media(max-width:420px){.purchase-entry-grid{grid-template-columns:1fr}.purchase-entry-grid .purchase-name-field{grid-column:auto}.invoice-sheet{padding:10px}.invoice-head{align-items:flex-start}}
 
+
+/* Portrait devices: request landscape so the invoice retains its desktop accounting layout */
+@media screen and (max-width:900px) and (orientation:portrait){
+ .invoice-fullscreen .invoice-sheet{display:none!important}
+ .invoice-fullscreen:before{content:"↻  يرجى تدوير الهاتف للوضع الأفقي";position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;background:#173f68;color:#fff;font-size:clamp(22px,6vw,32px);font-weight:900;direction:rtl}
+}
+@media screen and (max-width:900px) and (orientation:landscape){
+ .invoice-fullscreen{overflow:auto}
+ .invoice-sheet{width:100%;min-width:760px;min-height:100vh;padding:12px 16px}
+ .invoice-head{padding-bottom:8px}
+ .invoice-customer-grid{grid-template-columns:1.5fr 1fr;margin:8px 0}
+ .invoice-add-panel{margin:8px 0;padding:9px}
+ .invoice-add-title{margin-bottom:6px}
+ .invoice-search-row{grid-template-columns:minmax(220px,1fr) auto auto}
+ .invoice-column-head,.purchase-columns{display:grid}
+ .sale-columns{grid-template-columns:minmax(190px,2fr) .8fr .7fr .9fr .9fr 58px}
+ .sale-columns+#invoiceItemsList .invoice-line{display:grid;grid-template-columns:minmax(190px,2fr) minmax(0,4fr);gap:8px;align-items:center}
+ .sale-columns+#invoiceItemsList .invoice-item-name{grid-column:1;margin:0;padding:4px;text-align:right}
+ .sale-columns+#invoiceItemsList .invoice-item-fields{grid-column:2;display:grid;grid-template-columns:.8fr .7fr .9fr .9fr 58px;gap:6px;align-items:center}
+ .sale-columns+#invoiceItemsList .invoice-item-fields label{font-size:11px;gap:3px}
+ .sale-columns+#invoiceItemsList .invoice-item-fields .input{padding:6px;min-height:34px}
+ .invoice-bottom{grid-template-columns:180px 1fr;margin:8px 0}
+ .invoice-actions{grid-template-columns:2fr 1fr 1fr;gap:8px}
+ .invoice-actions button{min-height:40px}
+ .purchase-entry-grid{grid-template-columns:1fr 1.5fr .65fr .7fr .65fr .8fr}
+ .purchase-line{grid-template-columns:minmax(190px,2fr) .7fr .7fr .8fr .9fr 58px;padding:8px 12px}
+ .purchase-product-cell{min-width:0}
+ .purchase-actions{grid-template-columns:2fr 1fr}
+}
+
 </style>
 </head>
 <body>
@@ -1456,7 +1486,7 @@ function openPurchaseModal(editId) {
     var safeSupplier = String(existingPurchase && existingPurchase.supplier || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
     var h = '<div class="sale-modal invoice-fullscreen"><div class="sale-sheet invoice-sheet">';
     h += '<div class="invoice-head"><div><div class="invoice-kicker">سند للمحاسبة</div><h2>' + (editId ? 'فاتورة مشتريات' : 'فاتورة مشتريات جديدة') + '</h2><div class="muted">إدخال المشتريات وترحيلها للمخزون</div></div>';
-    h += '<button class="light" type="button" onclick="closeModal();show(\'purchases\')">↩ رجوع</button></div>';
+    h += '<button class="light" type="button" onclick="savePurchaseInvoice(\'back\')">↩ حفظ والرجوع</button></div>';
     h += '<div class="invoice-customer-grid purchase-head-grid">';
     h += '<label><span id="purSupplierLabelText">اسم المورد</span><input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + safeSupplier + '" placeholder="اسم المورد (مطلوب للشراء الآجل)"></label><datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
     h += '<label>رقم فاتورة المورد<input id="purNum" class="input" value="' + String(purNumVal).replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '" placeholder="يُنشأ تلقائياً إذا تركته فارغاً"></label></div>';
@@ -1493,8 +1523,8 @@ function renderPurchaseCartRows() {
 function togglePurchasePackFields() {
     var unit = document.getElementById('purItemUnit').value;
     var packInput = document.getElementById('purItemPackSize');
-    packInput.style.display = unit === 'كرتون' ? 'block' : 'none';
-    document.getElementById('purPackHint').textContent = unit === 'كرتون' ? 'أدخل عدد الحبات داخل الكرتون ثم عدد الكراتين المشتراة.' : (unit === 'كيس' ? 'أدخل عدد الأكياس فقط؛ لا يوجد حقل لعدد الحبات داخل الكيس.' : 'أدخل عدد الحبات المشتراة فقط.');
+    packInput.style.display = unit === 'حبة' ? 'none' : 'block';
+    document.getElementById('purPackHint').textContent = unit === 'حبة' ? 'أدخل عدد الحبات المشتراة فقط.' : 'أدخل عدد الحبات داخل '+unit+' ثم عدد '+unit+' المشتراة.';
 }
 function normalizePurchaseLookup(value) {
     return String(value || '').trim().replace(/\\s+/g, ' ').toLocaleLowerCase();
@@ -1523,10 +1553,10 @@ function applyPurchaseProductDefaults(product) {
     if(unitEl) unitEl.value=unit;
     if(packEl) packEl.value=Math.max(1,Number(product.packSize||1));
     // buy is saved as price per base piece; convert it to the price of the selected purchase unit.
-    if(costEl) costEl.value=Number(product.buy||0)*(unit==='كرتون'?Math.max(1,Number(product.packSize||1)):1);
+    if(costEl) costEl.value=Number(product.buy||0)*(unit==='حبة'?1:Math.max(1,Number(product.packSize||1)));
     togglePurchasePackFields();
     var hint=document.getElementById('purPackHint');
-    if(hint) hint.textContent='تم استرجاع بيانات الصنف المحفوظة: الوحدة '+unit+(unit==='كرتون'?' • '+Math.max(1,Number(product.packSize||1))+' حبة بالكرتون':'')+' • سعر الشراء المعبأ تلقائياً قابل للتعديل.';
+    if(hint) hint.textContent='تم استرجاع بيانات الصنف المحفوظة: الوحدة '+unit+(unit!=='حبة'?' • '+Math.max(1,Number(product.packSize||1))+' حبة في '+unit:'')+' • سعر الشراء المعبأ تلقائياً قابل للتعديل.';
 }
 function lookupPurchaseProductByName() {
     var product=findExistingPurchaseProduct(document.getElementById('purItemName').value,false);
@@ -1550,7 +1580,7 @@ function addPurchaseItemToList() {
     var cost = Number(document.getElementById('purItemCost').value || 0);
     var qty = Number(document.getElementById('purItemQty').value || 0);
     var unit = document.getElementById('purItemUnit').value;
-    var packSize = unit === 'كرتون' ? Math.max(1, Number(document.getElementById('purItemPackSize').value || 1)) : 1;
+    var packSize = unit === 'حبة' ? 1 : Math.max(1, Number(document.getElementById('purItemPackSize').value || 1));
     var baseQty = qty * packSize;
     if(!name || cost <= 0 || qty <= 0) { alert('أدخل بيانات صحيحة للصنف'); return; }
     purchaseCart.push({ name: name, barcode: barcode, cost: cost, qty: baseQty, enteredQty: qty, unit: unit, packSize: packSize, total: cost * qty });
@@ -1576,10 +1606,10 @@ function refreshPurchaseCartContainer() {
     if(total) total.textContent=money(purchaseCart.reduce(function(a,x){return a+Number(x.total||0);},0));
 }
 
-function savePurchaseInvoice() {
+function savePurchaseInvoice(mode) {
     var purNum = document.getElementById('purNum').value.trim() || ('PUR-' + Date.now());
     var supplierName = document.getElementById('purSupplier').value.trim();
-    if(purchaseCart.length === 0) { alert('أضف أصنافاً للفاتورة أولاً'); return; }
+    if(purchaseCart.length === 0) { if(mode==='back'){closeModal();show('purchases');return;} alert('أضف أصنافاً للفاتورة أولاً'); return; }
     if(purchasePaymentType === 'credit' && !supplierName) { alert('عند اختيار الشراء الآجل، يجب كتابة اسم المورد حتى يُضاف المبلغ إلى حسابه'); document.getElementById('purSupplier').focus(); return; }
     var total = purchaseCart.reduce(function(acc, item){ return acc + item.total; }, 0);
     
@@ -1623,7 +1653,7 @@ function savePurchaseInvoice() {
     saveDB();
     closeModal();
     show('purchases');
-    toast(purchasePaymentType==='credit'?'تم حفظ الفاتورة الآجلة وإضافة المبلغ إلى حساب المورد':'تم حفظ فاتورة الشراء النقدية وترحيل الكميات إلى المخزون');
+    toast(mode==='back'?'تم حفظ فاتورة الشراء والعودة للقسم':(purchasePaymentType==='credit'?'تم حفظ الفاتورة الآجلة وإضافة المبلغ إلى حساب المورد':'تم حفظ فاتورة الشراء النقدية وترحيل الكميات إلى المخزون'));
 }
 
 function deletePurchaseInvoice(id) {
@@ -1809,7 +1839,7 @@ function addModalItemByBarcode(code) {
             db.products.find(function(x){ return String(x.name || '').toLocaleLowerCase().indexOf(normalizedCode) > -1; });
     if(!p) { toast('المنتج غير موجود'); return; }
     var item = db.cart.find(function(x){ return x.id === p.id; });
-    if(item) { item.qty += 1; item.baseQty = item.qty * (item.unit === 'كرتون' ? Math.max(1,Number(p.packSize||1)) : 1); }
+    if(item) { item.qty += 1; item.baseQty = item.qty * (item.unit === 'حبة' ? 1 : Math.max(1,Number(p.packSize||1))); }
     else db.cart.push({ id: p.id, name: p.name, barcode: p.barcode, sell: Number(p.sell||0), qty: 1, unit: 'حبة', baseQty: 1, expiry: p.expiry });
     renderSaleModalContent();
     document.getElementById('saleBarcodeInp').value = '';
