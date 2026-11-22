@@ -22,7 +22,7 @@ button { border: 0; border-radius: 12px; padding: 12px 14px; cursor: pointer; }
 .brand h1 { font-size: 21px; margin: 0; }
 .sub { font-size: 12px; opacity: .8; }
 .content { padding: 14px 14px 90px; }
-.nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 8; max-width: 900px; margin: auto; background: #fff; border-top: 1px solid #ddd; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px; }
+.nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 8; max-width: 900px; margin: auto; background: #fff; border-top: 1px solid #ddd; display: grid; grid-template-columns: repeat(6, 1fr); padding: 6px; }
 .nav button { background: none; color: #59636d; font-size: 14px; padding: 10px 2px; font-weight: 600; line-height: 1.25; }
 .nav button.active { color: #0f766e; font-weight: 800; }
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -113,7 +113,7 @@ body{background:var(--paper);color:var(--ink)}
 .light{background:#e4eef7;color:var(--navy)}
 .input{border-color:#cbd5e1;border-radius:9px;min-height:44px}
 .input:focus{border-color:var(--navy2);box-shadow:0 0 0 3px #1b527f18}
-.nav{max-width:1240px;border-top:1px solid var(--line);box-shadow:0 -5px 18px #0f172a0a;padding:7px 10px calc(7px + env(safe-area-inset-bottom));grid-template-columns:repeat(5,minmax(0,1fr))}
+.nav{max-width:1240px;border-top:1px solid var(--line);box-shadow:0 -5px 18px #0f172a0a;padding:7px 10px calc(7px + env(safe-area-inset-bottom));grid-template-columns:repeat(6,minmax(0,1fr))}
 .nav button{font-size:13px;border-radius:9px}
 .nav button.active{background:#e7eff7;color:var(--navy)}
 .sale-sheet{border:1px solid var(--line);border-radius:16px}
@@ -122,7 +122,7 @@ body{background:var(--paper);color:var(--ink)}
 .offline-note{background:#e7f2f8;border-color:#b7d0e3;color:var(--navy)}
 .toast{max-width:calc(100vw - 28px);text-align:center}
 @media(min-width:700px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.nav{left:50%;transform:translateX(-50%);right:auto;width:min(1240px,100%)}.content{padding-bottom:95px}}
-@media(max-width:520px){.top{padding:12px}.brand h1{font-size:18px}.brand{gap:8px}.brand>div:last-child button{font-size:12px;padding:10px 8px}.content{padding:12px 10px 100px}.grid{gap:8px}.card{padding:12px}.stat{font-size:18px}.nav button{font-size:11px;padding:9px 1px}}
+@media(max-width:520px){.top{padding:12px}.brand h1{font-size:18px}.brand{gap:8px}.brand>div:last-child button{font-size:12px;padding:10px 8px}.content{padding:12px 10px 100px}.grid{gap:8px}.card{padding:12px}.stat{font-size:18px}.nav button{font-size:10px;padding:9px 0;white-space:nowrap}}
 
 @media print {
   body * { visibility: hidden; }
@@ -346,6 +346,7 @@ body{background:var(--paper);color:var(--ink)}
     <nav class="nav" id="mainNav">
         <button data-v="home" onclick="show('home')">⌂<br>الرئيسية</button>
         <button data-v="sale" onclick="openSaleModal()">🛒<br>بيع جديد</button>
+        <button data-v="sales" onclick="show('sales')">🧾<br>الفواتير</button>
         <button data-v="stock" onclick="show('stock')">▦<br>المخزون</button>
         <button data-v="purchases" onclick="show('purchases')">📦<br>الشراء</button>
         <button data-v="debts" onclick="show('debts')">👤<br>الديون</button>
