@@ -1648,7 +1648,7 @@ function openPurchaseModalDesktop(editId) {
     h += '<label id="purPackSizeWrap">عدد الحبات<input id="purItemPackSize" class="input" type="number" min="1" value="12" placeholder="داخل العبوة"></label>';
     h += '<label>الكمية<input id="purItemQty" class="input" type="number" min="0.01" step="any" placeholder="الكمية"></label>';
     h += '<label>سعر الوحدة<input id="purItemCost" class="input" type="number" min="0" step="any" placeholder="سعر الشراء"></label></div>';
-    h += '<div class="muted" id="purPackHint">اختر الصنف لاسترجاع الوحدة والعبوة وسعر الشراء المحفوظة.</div>';
+    h += '<div id="purProductSuggestions" style="display:none;max-height:190px;overflow:auto;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0;background:#fff"></div><div class="muted" id="purPackHint">اختر الصنف لاسترجاع الوحدة والعبوة وسعر الشراء المحفوظة.</div>';
     h += '<button class="primary purchase-add-button" type="button" onclick="addPurchaseItemToList()">＋ إضافة الصنف إلى الفاتورة</button></div>';
     h += '<div class="invoice-table-wrap"><div class="invoice-table-heading"><span>تفاصيل أصناف المشتريات</span><span>الإجمالي</span></div>';
     h += '<div class="golden-table-wrap"><table class="golden-table"><thead><tr><th>#</th><th>الصنف</th><th>الوحدة</th><th>الكمية</th><th>السعر</th><th>المجموع</th><th>الباركود</th><th></th></tr></thead><tbody id="purItemsContainer">' + renderPurchaseCartRows() + '</tbody></table></div></div>';
@@ -1766,7 +1766,7 @@ function addPurchaseItemToList() {
     var qty = Number(document.getElementById('purItemQty').value || 0);
     var unit = document.getElementById('purItemUnit').value;
     var matchedProduct=findExistingPurchaseProduct(barcode,true)||findExistingPurchaseProduct(name,false);
-    var packSize = unit === 'حبة' ? 1 : Math.max(1, Number((matchedProduct&&matchedProduct.packSize)||document.getElementById('purItemPackSize').value||1));
+    var packSize = unit === 'حبة' ? 1 : Math.max(1, Number(document.getElementById('purItemPackSize').value||(matchedProduct&&matchedProduct.packSize)||1));
     var baseQty = qty * packSize;
     if(!name || cost <= 0 || qty <= 0) { alert('أدخل بيانات صحيحة للصنف'); return; }
     purchaseCart.push({ name: name, barcode: barcode, cost: cost, qty: baseQty, enteredQty: qty, unit: unit, packSize: packSize, total: cost * qty });
