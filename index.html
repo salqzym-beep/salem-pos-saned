@@ -1163,7 +1163,7 @@ function show(v) {
         h += '<div class="section">الحسابات</div><div class="grid">';
         if(isManager){
             h += '<button class="primary" onclick="addAccountParty(\'customer\')">＋ إضافة عميل</button><button class="primary" onclick="addAccountParty(\'supplier\')">＋ إضافة مورد</button>';
-            h += '<button class="light" onclick="show(\'accountStatements\')">كشف حساب عميل أو مورد تفصيلي</button><button class="light" onclick="show(\'customerDebtSummary\')">كشف إجمالي مديونية العملاء</button></div>';
+            h += '<button class="light" onclick="show(\'accountStatements\')">كشف حساب عميل أو مورد تفصيلي</button><button class="light" onclick="show(\'customerDebtSummary\')">كشف إجمالي مديونية العملاء</button><button class="primary" style="background:#0f766e" onclick="show(\'debts\')">🧾 سند قبض عميل / متابعة الديون</button><button class="primary" style="background:#0f766e" onclick="createSupplierReceipt()">🧾 سند صرف للمورد</button></div>';
         } else if(hasWorkerPermission('addCustomer')) {
             h += '<button class="primary" onclick="addAccountParty(\'customer\')">＋ إضافة عميل جديد</button></div>';
         } else {
@@ -1173,7 +1173,7 @@ function show(v) {
         var accountPartyChanges=syncAccountParties();
         h += '<div class="section">العملاء (مزامنة من الفواتير والحسابات السابقة)</div>'+(db.customers||[]).map(function(c){return '<div class="card" style="margin:6px 0"><b>'+c.name+'</b><div class="muted">رصيد الحساب: '+['YER','SAR','USD'].map(function(code){var v=accountBalance('customer',c.name,code);return v?'<div>'+money(v,code)+'</div>':'';}).join('')+'</div></div>';}).join('') || '<div class="card muted">لا توجد أسماء عملاء مسجلة</div>';
         h += '<div class="card" style="margin:8px 0;background:#fff7ed;border-color:#fb923c"><b>إجمالي المستحق للموردين حسب العملة</b>'+['YER','SAR','USD'].map(function(code){var total=(db.suppliers||[]).reduce(function(a,c){return a+Math.max(0,Number(accountBalance('supplier',c.name,code)||0));},0);return '<div>'+currencyLabel(code)+': '+money(total,code)+'</div>';}).join('')+'</div>';
-        h += '<div class="section">الموردون</div>'+(db.suppliers||[]).map(function(c){return '<div class="card" style="margin:6px 0"><b>'+c.name+'</b><div class="muted">رصيد الحساب: '+['YER','SAR','USD'].map(function(code){var v=accountBalance('supplier',c.name,code);return v?'<div>'+money(v,code)+'</div>':'';}).join('')+'</div></div>';}).join('') || '<div class="card muted">لا توجد أسماء موردين مسجلة</div>';
+        h += '<div class="section">الموردون وأرصدتهم</div>'+(db.suppliers||[]).map(function(c){var balHtml=['YER','SAR','USD'].map(function(code){var v=accountBalance('supplier',c.name,code);return '<div style="color:'+currencyColor(code)+'">'+currencyLabel(code)+': '+money(v,code)+'</div>';}).join('');return '<div class="card" style="margin:6px 0"><b>'+c.name+'</b><div class="muted">الرصيد الحالي (الموجب = مستحق للمورد):</div>'+balHtml+'<button class="light" style="margin-top:8px" onclick="openSupplierStatement(\''+String(c.name).replace(/'/g,"\\'")+'\')">📄 كشف حساب المورد</button></div>';}).join('') || '<div class="card muted">لا توجد أسماء موردين مسجلة</div>';
         if(accountPartyChanges) saveDB();
         }
     } else if (v === 'accountStatements') {
@@ -1257,6 +1257,16 @@ function addAccountParty(type){
  var key=type==='customer'?'customers':'suppliers'; if(!db[key])db[key]=[];
  if(db[key].some(function(x){return x.name.toLowerCase()===name.trim().toLowerCase();})){alert('الاسم مسجل مسبقاً');return;}
  db[key].push({id:Date.now(),name:name.trim(),phone:prompt('رقم الهاتف (اختياري)')||''});saveDB();show('accounts');toast('تمت إضافة '+(type==='customer'?'العميل':'المورد'));
+}
+function openSupplierStatement(name){
+ show('accountStatements');
+ var type=document.getElementById('statementType');
+ var select=document.getElementById('statementName');
+ var currency=document.getElementById('statementCurrency');
+ if(type)type.value='supplier';
+ if(select){refreshStatementNames();select.value=name;}
+ if(currency)currency.value=getCurrencyCode();
+ renderAccountStatement();
 }
 function createSupplierReceipt(){
  var suppliers=(db.suppliers||[]).map(function(x){return x.name;});
