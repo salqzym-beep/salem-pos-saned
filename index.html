@@ -1434,7 +1434,7 @@ function setPurchasePaymentType(type){
     var cashBtn=document.getElementById('purPayCash'), creditBtn=document.getElementById('purPayCredit');
     if(cashBtn) cashBtn.classList.toggle('selected',type==='cash');
     if(creditBtn) creditBtn.classList.toggle('selected',type==='credit');
-    var supplierLabel=document.getElementById('purSupplierLabel');
+    var supplierLabel=document.getElementById('purSupplierLabelText');
     if(supplierLabel) supplierLabel.textContent=type==='credit'?'المورد (إلزامي للشراء الآجل)':'المورد (اختياري للشراء النقدي)';
 }
 
@@ -1458,7 +1458,7 @@ function openPurchaseModal(editId) {
     h += '<div class="invoice-head"><div><div class="invoice-kicker">سند للمحاسبة</div><h2>' + (editId ? 'فاتورة مشتريات' : 'فاتورة مشتريات جديدة') + '</h2><div class="muted">إدخال المشتريات وترحيلها للمخزون</div></div>';
     h += '<button class="light" type="button" onclick="closeModal();show(\'purchases\')">↩ رجوع</button></div>';
     h += '<div class="invoice-customer-grid purchase-head-grid">';
-    h += '<label id="purSupplierLabel">اسم المورد<input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + safeSupplier + '" placeholder="اسم المورد (مطلوب للشراء الآجل)"></label><datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
+    h += '<label><span id="purSupplierLabelText">اسم المورد</span><input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + safeSupplier + '" placeholder="اسم المورد (مطلوب للشراء الآجل)"></label><datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
     h += '<label>رقم فاتورة المورد<input id="purNum" class="input" value="' + String(purNumVal).replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '" placeholder="يُنشأ تلقائياً إذا تركته فارغاً"></label></div>';
     h += '<div class="invoice-add-panel"><div class="invoice-add-title">بيانات الصنف المراد إضافته</div>';
     h += '<div class="purchase-entry-grid">';
