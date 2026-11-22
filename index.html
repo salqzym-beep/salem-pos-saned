@@ -1548,10 +1548,9 @@ function openPurchaseModal(editId) {
     h += '<div class="muted" id="purPackHint">اختر الصنف لاسترجاع الوحدة والعبوة وسعر الشراء المحفوظة.</div>';
     h += '<button class="primary purchase-add-button" type="button" onclick="addPurchaseItemToList()">＋ إضافة الصنف إلى الفاتورة</button></div>';
     h += '<div class="invoice-table-wrap"><div class="invoice-table-heading"><span>تفاصيل أصناف المشتريات</span><span>الإجمالي</span></div>';
-    h += '<div class="invoice-column-head purchase-columns"><span>الصنف</span><span>الوحدة</span><span>الكمية</span><span>السعر</span><span>المجموع</span><span>الباركود</span><span></span></div>';
-    h += '<div id="purItemsContainer">' + renderPurchaseCartRows() + '</div></div>';
+    h += '<div class="golden-table-wrap"><table class="golden-table"><thead><tr><th>#</th><th>الصنف</th><th>الوحدة</th><th>الكمية</th><th>السعر</th><th>المجموع</th><th>الباركود</th><th></th></tr></thead><tbody id="purItemsContainer">' + renderPurchaseCartRows() + '</tbody></table></div></div>';
     h += '<div class="invoice-bottom purchase-bottom"><div class="purchase-payment-box"><div class="invoice-add-title">طريقة الدفع</div><div class="purchase-payment-buttons"><button id="purPayCash" type="button" onclick="setPurchasePaymentType(\'cash\')">💵 نقداً</button><button id="purPayCredit" type="button" onclick="setPurchasePaymentType(\'credit\')">🧾 آجل</button></div></div>';
-    h += '<div class="invoice-totals"><div><span>عدد الأصناف</span><strong id="purItemCount">' + purchaseCart.length + '</strong></div><div><span>الكميات</span><strong id="purQtyTotal">' + purchaseCart.reduce(function(a,x){return a+Number(x.enteredQty||x.qty||0);},0) + '</strong></div><label class="golden-grand">الإجمالي النهائي<input class="input" id="purGrandTotal" type="number" min="0" value="' + purchaseCart.reduce(function(a,x){return a+Number(x.total||0);},0) + '" onchange="setPurchaseGrandTotal(this.value)"></label></div></div>
+    h += '<div class="invoice-totals"><div><span>عدد الأصناف</span><strong id="purItemCount">' + purchaseCart.length + '</strong></div><div><span>الكميات</span><strong id="purQtyTotal">' + purchaseCart.reduce(function(a,x){return a+Number(x.enteredQty||x.qty||0);},0) + '</strong></div><label class="golden-grand">الإجمالي النهائي<input class="input" id="purGrandTotal" type="number" min="0" value="' + purchaseCart.reduce(function(a,x){return a+Number(x.total||0);},0) + '" onchange="setPurchaseGrandTotal(this.value)"></label></div></div>';
     h += '<div class="invoice-actions purchase-actions"><button class="primary" type="button" onclick="savePurchaseInvoice()">💾 حفظ الفاتورة وترحيل المخزون</button><button class="light" type="button" onclick="savePurchaseInvoice(\'back\')">↩ رجوع وحفظ</button></div>';
     h += '</div></div>';
     document.getElementById('modal').innerHTML = h;
@@ -1559,9 +1558,9 @@ function openPurchaseModal(editId) {
     setPurchasePaymentType(purchasePaymentType);
 }
 function renderPurchaseCartRows() {
-    if(!purchaseCart.length)return '<tr><td colspan="7" class="invoice-empty">أضف الأصناف إلى الفاتورة</td></tr>';
+    if(!purchaseCart.length)return '<tr><td colspan="8" class="invoice-empty">أضف الأصناف إلى الفاتورة</td></tr>';
     return purchaseCart.map(function(item,i){
-        return '<tr class="purchase-line"><td><input class="input grid-edit" list="purProductNamesList" value="'+escapeInvoiceText(item.name||'')+'" onchange="updatePurchaseRow('+i+',\'name\',this.value)"></td>'+
+        return '<tr class="purchase-line"><td>'+(i+1)+'</td><td><input class="input grid-edit" list="purProductNamesList" value="'+escapeInvoiceText(item.name||'')+'" onchange="updatePurchaseRow('+i+',\'name\',this.value)"></td>'+
         '<td><select class="input grid-edit" onchange="updatePurchaseRow('+i+',\'unit\',this.value)"><option '+(item.unit==='حبة'?'selected':'')+'>حبة</option><option '+(item.unit==='كرتون'?'selected':'')+'>كرتون</option><option '+(item.unit==='كيس'?'selected':'')+'>كيس</option></select></td>'+
         '<td><input class="input grid-edit" type="number" min="0.01" step="any" value="'+Number(item.enteredQty||item.qty||0)+'" onchange="updatePurchaseRow('+i+',\'qty\',this.value)"></td>'+
         '<td><input class="input grid-edit" type="number" min="0" step="any" value="'+Number(item.cost||0)+'" onchange="updatePurchaseRow('+i+',\'cost\',this.value)"></td>'+
@@ -1809,13 +1808,13 @@ function renderSaleModalContent() {
         var c=db.cart[i], lineTotal=Number(c.sell||0)*Number(c.qty||0);
         subtotal+=lineTotal;
         var p=db.products.find(function(x){return x.id===c.id;})||{};
-        itemsHtml+='<tr class="invoice-line sale-edit-row">';
+        itemsHtml+='<tr class="invoice-line sale-edit-row"><td>'+(i+1)+'</td>';
         itemsHtml+='<td><input class="input grid-edit" list="saleProductNames" value="'+escapeInvoiceText(c.name||'')+'" onchange="updateCartName('+i+',this.value)" aria-label="الصنف"></td>';
         itemsHtml+='<td><select class="input grid-edit" onchange="updateCartUnit('+i+',this.value)">'+saleUnitOptions(p,c.unit||'حبة',i)+'</select></td>';
         itemsHtml+='<td><input class="input grid-edit invoice-number" type="number" min="0.01" step="any" value="'+Number(c.qty||1)+'" onchange="updateCartQty('+i+',this.value)"></td>';
         itemsHtml+='<td><input class="input grid-edit invoice-number" type="number" min="0" step="any" value="'+Number(c.sell||0)+'" onchange="updateCartSell('+i+',this.value)"></td>';
         itemsHtml+='<td><input class="input grid-edit invoice-number line-total-edit" type="number" min="0" step="any" value="'+lineTotal+'" onchange="updateSaleLineTotal('+i+',this.value)"></td>';
-        itemsHtml+='<td><button class="danger invoice-delete" type="button" onclick="removeSaleCart('+i+')">حذف</button></td></tr>';
+        itemsHtml+='<td>التسجيل</td><td><button class="danger invoice-delete" type="button" onclick="removeSaleCart('+i+')">حذف</button></td></tr>';
     }
     if(!itemsHtml) itemsHtml='<tr><td colspan="6" class="invoice-empty">أضف الأصناف إلى الفاتورة</td></tr>';
     var discount=Number(discountValue||0), finalTotal=Math.max(0,subtotal-discount);
@@ -1830,7 +1829,7 @@ function renderSaleModalContent() {
     h+='<label>المستودع<select id="saleWarehouse" class="input"><option>المستودع الرئيسي</option></select></label>';
     h+='<label>دفع<select id="saleType" class="input" onchange="renderSaleTotalsOnly()"><option value="نقد" '+(typeValue==='نقد'?'selected':'')+'>نقدي</option><option value="آجل" '+(typeValue==='آجل'?'selected':'')+'>آجل</option></select></label></div></div>';
     h+='<div class="golden-entry-row"><input id="saleBarcodeInp" class="input" autocomplete="off" placeholder="ابحث باسم الصنف أو الباركود" oninput="renderSaleProductSuggestions(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addModalItemByBarcode(this.value)}"><button class="primary" onclick="addModalItemByBarcode(document.getElementById(\'saleBarcodeInp\').value)">＋ إضافة</button><button class="light" onclick="startCameraScanner(\'saleBarcodeInp\')">📷 باركود</button><datalist id="saleProductNames">'+(db.products||[]).map(function(x){return '<option value="'+escapeInvoiceText(x.name||'')+'">';}).join('')+'</datalist></div>';
-    h+='<div class="golden-table-wrap"><table class="golden-table"><thead><tr><th>#</th><th>المادة</th><th>الوحدة</th><th>الكمية</th><th>السعر</th><th>المجموع</th><th>الحالة</th></tr></thead><tbody>'+itemsHtml+'</tbody></table></div>';
+    h+='<div class="golden-table-wrap"><table class="golden-table"><thead><tr><th>#</th><th>المادة</th><th>الوحدة</th><th>الكمية</th><th>السعر</th><th>المجموع</th><th>الحالة</th><th></th></tr></thead><tbody>'+itemsHtml+'</tbody></table></div>';
     h+='<div class="golden-bottom"><div class="golden-totals"><label>المجموع<input id="invoiceSubtotal" class="input" type="number" value="'+subtotal+'" readonly></label><label>الكميات<strong id="invoiceQtyTotal">'+db.cart.reduce(function(a,x){return a+Number(x.qty||0);},0)+'</strong></label><label>الخصم<input id="saleDiscount" class="input" type="number" min="0" value="'+discount+'" oninput="renderSaleTotalsOnly()"></label><label class="golden-grand">الصافي<input id="saleFinalTotal" class="input" type="number" min="0" value="'+finalTotal+'" onchange="setSaleFinalTotal(this.value)"></label></div>';
     h+='<div class="golden-buttons"><button class="light" type="button" onclick="saveSaleAndContinue(\'new\')">فاتورة جديدة</button><button class="dark" type="button" onclick="checkoutSale(\'pdf\')">سند قيد</button><button class="primary" type="button" onclick="checkoutSale(\'stay\')">💾 حفظ</button><button class="light" type="button" onclick="checkoutSale(\'thermal\')">🖨 طباعة</button><button class="light" type="button" onclick="saveSaleAndContinue(\'back\')">↩ رجوع وحفظ</button></div></div>';
     h+='</div></div>';
