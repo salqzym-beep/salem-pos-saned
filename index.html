@@ -131,6 +131,67 @@ body{background:var(--paper);color:var(--ink)}
 }
 
 @media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}.nav{left:50%;transform:translateX(-50%);right:auto;width:900px}.content{padding-bottom:80px}}
+
+/* واجهة موحدة للفواتير وفق أسلوب برامج المحاسبة المكتبية */
+.invoice-fullscreen{position:fixed;inset:0;z-index:100000;display:block;overflow:auto;background:#e9eef4;padding:0}
+.invoice-sheet{width:100%;max-width:none;min-height:100vh;max-height:none;margin:0;border:0;border-radius:0;padding:clamp(12px,2vw,28px);background:#f7f9fc;box-shadow:none;overflow:auto}
+.invoice-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 0 16px;border-bottom:2px solid #d7e0ea}
+.invoice-head h2{margin:4px 0;color:#173f68;font-size:clamp(22px,3vw,30px)}
+.invoice-kicker{font-size:12px;font-weight:800;color:#718096}
+.invoice-customer-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin:16px 0}
+.invoice-customer-grid label,.invoice-bottom>label,.invoice-item-fields label,.purchase-entry-grid label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:800;color:#334155}
+.invoice-add-panel{padding:14px;background:#edf3f8;border:1px solid #d1dce7;border-radius:10px;margin:14px 0}
+.invoice-add-title{font-weight:900;color:#173f68;margin-bottom:10px}
+.invoice-search-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto;gap:8px}
+.invoice-suggestions{background:#fff;border:1px solid #cbd5e1;border-radius:9px;margin-top:8px;max-height:220px;overflow:auto}
+.invoice-table-wrap{background:white;border:1px solid #d4dee8;border-radius:10px;overflow:hidden}
+.invoice-table-heading{display:flex;justify-content:space-between;align-items:center;background:#173f68;color:white;padding:12px 14px;font-weight:900}
+.invoice-column-head{display:grid;grid-template-columns:minmax(170px,2fr) .8fr .7fr .9fr .9fr 64px;gap:8px;padding:10px 14px;background:#e3ebf3;color:#334155;font-size:12px;font-weight:900}
+.invoice-line{padding:12px 14px;border-bottom:1px solid #e3e9ef}
+.invoice-item-name{display:block;background:transparent;color:#173f68;padding:2px 0 10px;font-size:16px;font-weight:900;text-align:right;border-radius:0}
+.invoice-item-fields{display:grid;grid-template-columns:minmax(100px,1fr) minmax(80px,.6fr) minmax(100px,.8fr) minmax(100px,.8fr) auto;align-items:end;gap:10px}
+.invoice-number{text-align:center;font-weight:800}
+.invoice-line-total{color:#173f68;text-align:center;padding:12px 2px}
+.invoice-delete{padding:9px 12px}
+.invoice-empty{text-align:center;color:#718096;padding:34px 12px}
+.invoice-line-selected{background:#edf5ff}
+.invoice-bottom{display:grid;grid-template-columns:minmax(180px,.65fr) minmax(260px,1fr);gap:14px;align-items:stretch;margin:14px 0}
+.invoice-totals{background:#edf3f8;border:1px solid #d1dce7;border-radius:10px;padding:12px 16px}
+.invoice-totals>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-weight:800}
+.invoice-grand-total{font-size:clamp(22px,3vw,30px);color:#147d78}
+.invoice-actions{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;padding-bottom:12px}
+.invoice-actions button{min-height:50px;font-weight:900;border-radius:8px}
+.purchase-entry-grid{display:grid;grid-template-columns:1.1fr 1.5fr .7fr .8fr .7fr .9fr;gap:9px;align-items:end}
+.purchase-entry-grid .row{gap:6px}
+.purchase-entry-grid .row>*:first-child{min-width:0}
+.purchase-add-button{margin-top:12px;min-height:46px;font-weight:900}
+.purchase-columns{grid-template-columns:minmax(160px,2fr) .7fr .7fr .9fr .9fr 64px}
+.purchase-line{display:grid;grid-template-columns:minmax(160px,2fr) .7fr .7fr .9fr .9fr 64px;gap:8px;align-items:center}
+.purchase-item-title{color:#173f68;overflow-wrap:anywhere}
+.purchase-barcode{display:block;font-size:11px}
+.purchase-payment-box{background:#edf3f8;border:1px solid #d1dce7;border-radius:10px;padding:12px}
+.purchase-payment-buttons{display:flex;gap:8px}
+.purchase-payment-buttons button{flex:1;background:#e2e8f0;color:#26384b;font-weight:900;border-radius:8px}
+.purchase-payment-buttons button.selected{background:#173f68;color:white}
+.purchase-actions{grid-template-columns:2fr 1fr}
+@media(max-width:760px){
+ .invoice-customer-grid{grid-template-columns:1fr}
+ .purchase-entry-grid{grid-template-columns:1fr 1fr}
+ .purchase-entry-grid .purchase-name-field{grid-column:1/-1}
+ .invoice-column-head{display:none}
+ .purchase-line{grid-template-columns:1fr 1fr;gap:7px;padding:12px}
+ .purchase-item-title{grid-column:1/-1;font-size:16px}
+ .purchase-barcode{grid-column:1/-1}
+ .purchase-total{font-size:17px;color:#173f68}
+ .invoice-item-fields{grid-template-columns:1fr 1fr;gap:8px}
+ .invoice-bottom{grid-template-columns:1fr}
+ .invoice-actions,.purchase-actions{grid-template-columns:1fr}
+ .invoice-search-row{grid-template-columns:1fr 1fr}
+ .invoice-search-row input{grid-column:1/-1}
+ .invoice-head h2{font-size:21px}
+}
+@media(max-width:420px){.purchase-entry-grid{grid-template-columns:1fr}.purchase-entry-grid .purchase-name-field{grid-column:auto}.invoice-sheet{padding:10px}.invoice-head{align-items:flex-start}}
+
 </style>
 </head>
 <body>
@@ -1378,39 +1439,50 @@ function openPurchaseModal(editId) {
     editingPurchaseId = null;
     purchasePaymentType = 'cash';
     var purNumVal = '';
-    
+    var existingPurchase = null;
     if (editId) {
-        var pur = (db.purchases || []).find(function(x){ return x.id === editId; });
-        if (pur) {
-            editingPurchaseId = pur.id;
-            purNumVal = pur.num;
-            purchaseCart = JSON.parse(JSON.stringify(pur.items));
-            purchasePaymentType = pur.paymentType || 'credit';
+        existingPurchase = (db.purchases || []).find(function(x){ return x.id === editId; });
+        if (existingPurchase) {
+            editingPurchaseId = existingPurchase.id;
+            purNumVal = existingPurchase.num || '';
+            purchaseCart = JSON.parse(JSON.stringify(existingPurchase.items || []));
+            purchasePaymentType = existingPurchase.paymentType || 'credit';
         }
     }
-
-    var h = '<div class="sale-modal"><div class="sale-sheet">';
-    h += '<h2 style="margin-top:0; color:#0f766e; text-align:center">' + (editId ? '📦 تعديل فاتورة شراء' : '📦 إضافة فاتورة شراء جديدة') + '</h2>';
-    h += '<label class="box-label" id="purSupplierLabel">المورد (اختياري للشراء النقدي)</label><input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + ((editId && (db.purchases||[]).find(function(x){return x.id===editId;}) || {}).supplier || '') + '" placeholder="اكتب اسم المورد فقط...">' + '<datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name).replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
-    h += '<label class="box-label">رقم الفاتورة</label><input id="purNum" class="input" value="' + purNumVal + '" placeholder="رقم الفاتورة...">';
-    h += '<label class="box-label">نوع الدفع</label><div class="row" style="gap:8px;margin:6px 0 12px"><button id="purPayCash" type="button" style="flex:1;background:#0f766e;color:white" onclick="setPurchasePaymentType(\'cash\')">💵 نقداً</button><button id="purPayCredit" type="button" style="flex:1;background:#e5e7eb;color:#111827" onclick="setPurchasePaymentType(\'credit\')">🧾 آجل</button></div>';
-    h += '<div style="margin:10px 0;"><label class="box-label">إضافة منتج للمشتريات</label>';
-    h += '<div style="margin-bottom:8px"><label class="box-label">الباركود</label><div class="row"><input id="purItemBarcode" class="input" autocomplete="off" placeholder="امسح أو أدخل الباركود" oninput="lookupPurchaseBarcodeIfFound(this.value)" onchange="lookupPurchaseBarcode(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();lookupPurchaseBarcode(this.value)}"><button class="light" type="button" onclick="startCameraScanner(\'purItemBarcode\')">📷 تصوير بالكاميرا</button></div></div>';
-    h += '<div class="row purchase-fields" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;"><input id="purItemName" class="input" list="purProductNamesList" autocomplete="off" oninput="lookupPurchaseProductByName()" onchange="lookupPurchaseProductByName()" style="font-size:18px;min-height:52px;flex:1 1 100%" placeholder="اكتب اسم المنتج وستظهر الأصناف المحفوظة"><datalist id="purProductNamesList">' + (db.products||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist><select id="purItemUnit" class="input" style="font-size:18px;min-height:52px;flex:1 1 100%" onchange="togglePurchasePackFields()"><option value="حبة">حبة</option><option value="كرتون">كرتون</option><option value="كيس">كيس</option></select><input id="purItemPackSize" class="input" style="font-size:18px;min-height:52px;flex:1 1 100%" type="number" min="1" value="12" placeholder="عدد الحبات داخل الكرتون"><input id="purItemQty" class="input" type="number" placeholder="الكمية (عدد الكراتين/الحبات/الأكياس)" style="font-size:20px;font-weight:800;min-height:52px;flex:1 1 100%"><input id="purItemCost" class="input" style="font-size:18px;min-height:52px;flex:1 1 100%" type="number" placeholder="سعر شراء الوحدة المختارة"></div><div class="muted" id="purPackHint">اكتب اسم المنتج أو اختره من الاقتراحات؛ ستظهر العبوة وعدد الوحدات تلقائياً.</div>';
-    h += '<button class="primary" style="width:100%; margin-top:4px;" onclick="addPurchaseItemToList()">＋ إضافة للصنف بالقائمة</button></div>';
-    
-    var itemsListHtml = '';
-    for(var i=0; i<purchaseCart.length; i++) {
-        itemsListHtml += '<div style="display:flex; justify-content:space-between; align-items:center; padding:4px; border-bottom:1px solid #eee;"><span>' + purchaseCart[i].name + ' (' + (purchaseCart[i].enteredQty||purchaseCart[i].qty) + ' ' + (purchaseCart[i].unit||'حبة') + ') - ' + money(purchaseCart[i].total) + '</span><button class="danger" style="padding:4px 8px; font-size:11px;" onclick="removePurchaseCartItem(' + i + ')">حذف</button></div>';
-    }
-    if(itemsListHtml === '') itemsListHtml = '<div class="muted" style="text-align:center;">القائمة فارغة</div>';
-
-    h += '<div id="purItemsContainer" style="max-height:20vh; overflow-y:auto; border:1px solid #ddd; padding:8px; border-radius:8px; margin-bottom:10px;">' + itemsListHtml + '</div>';
-    h += '<button class="primary" style="width:100%; font-weight:bold; margin-bottom:8px;" onclick="savePurchaseInvoice()">حفظ وترحيل الفاتورة للمخزون</button>';
-    h += '<button class="danger" style="width:100%;" onclick="closeModal()">إلغاء</button>';
+    var safeSupplier = String(existingPurchase && existingPurchase.supplier || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    var h = '<div class="sale-modal invoice-fullscreen"><div class="sale-sheet invoice-sheet">';
+    h += '<div class="invoice-head"><div><div class="invoice-kicker">سند للمحاسبة</div><h2>' + (editId ? 'فاتورة مشتريات' : 'فاتورة مشتريات جديدة') + '</h2><div class="muted">إدخال المشتريات وترحيلها للمخزون</div></div>';
+    h += '<button class="light" type="button" onclick="closeModal();show(\'purchases\')">↩ رجوع</button></div>';
+    h += '<div class="invoice-customer-grid purchase-head-grid">';
+    h += '<label>اسم المورد<input id="purSupplier" class="input" list="supplierNamesList" autocomplete="off" value="' + safeSupplier + '" placeholder="اسم المورد (مطلوب للشراء الآجل)"></label><datalist id="supplierNamesList">' + (db.suppliers||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist>';
+    h += '<label>رقم فاتورة المورد<input id="purNum" class="input" value="' + String(purNumVal).replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '" placeholder="يُنشأ تلقائياً إذا تركته فارغاً"></label></div>';
+    h += '<div class="invoice-add-panel"><div class="invoice-add-title">بيانات الصنف المراد إضافته</div>';
+    h += '<div class="purchase-entry-grid">';
+    h += '<label>الباركود<div class="row"><input id="purItemBarcode" class="input" autocomplete="off" placeholder="امسح أو أدخل الباركود" oninput="lookupPurchaseBarcodeIfFound(this.value)" onchange="lookupPurchaseBarcode(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();lookupPurchaseBarcode(this.value)}"><button class="light" type="button" onclick="startCameraScanner(\'purItemBarcode\')">📷</button></div></label>';
+    h += '<label class="purchase-name-field">اسم الصنف<input id="purItemName" class="input" list="purProductNamesList" autocomplete="off" oninput="lookupPurchaseProductByName()" onchange="lookupPurchaseProductByName()" placeholder="اكتب اسم الصنف أو اختره"><datalist id="purProductNamesList">' + (db.products||[]).map(function(x){return '<option value="'+String(x.name||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">';}).join('') + '</datalist></label>';
+    h += '<label>الوحدة<select id="purItemUnit" class="input" onchange="togglePurchasePackFields()"><option value="حبة">حبة</option><option value="كرتون">كرتون</option><option value="كيس">كيس</option></select></label>';
+    h += '<label id="purPackSizeWrap">عدد الحبات<input id="purItemPackSize" class="input" type="number" min="1" value="12" placeholder="داخل العبوة"></label>';
+    h += '<label>الكمية<input id="purItemQty" class="input" type="number" min="0.01" step="any" placeholder="الكمية"></label>';
+    h += '<label>سعر الوحدة<input id="purItemCost" class="input" type="number" min="0" step="any" placeholder="سعر الشراء"></label></div>';
+    h += '<div class="muted" id="purPackHint">اختر الصنف لاسترجاع الوحدة والعبوة وسعر الشراء المحفوظة.</div>';
+    h += '<button class="primary purchase-add-button" type="button" onclick="addPurchaseItemToList()">＋ إضافة الصنف إلى الفاتورة</button></div>';
+    h += '<div class="invoice-table-wrap"><div class="invoice-table-heading"><span>تفاصيل أصناف المشتريات</span><span>الإجمالي</span></div>';
+    h += '<div class="invoice-column-head purchase-columns"><span>الصنف / الباركود</span><span>الوحدة</span><span>الكمية</span><span>سعر الوحدة</span><span>الإجمالي</span><span></span></div>';
+    h += '<div id="purItemsContainer">' + renderPurchaseCartRows() + '</div></div>';
+    h += '<div class="invoice-bottom purchase-bottom"><div class="purchase-payment-box"><div class="invoice-add-title">طريقة الدفع</div><div class="purchase-payment-buttons"><button id="purPayCash" type="button" onclick="setPurchasePaymentType(\'cash\')">💵 نقداً</button><button id="purPayCredit" type="button" onclick="setPurchasePaymentType(\'credit\')">🧾 آجل</button></div></div>';
+    h += '<div class="invoice-totals"><div><span>عدد الأصناف</span><strong id="purItemCount">' + purchaseCart.length + '</strong></div><div><span>إجمالي المشتريات</span><strong class="invoice-grand-total" id="purGrandTotal">' + money(purchaseCart.reduce(function(a,x){return a+Number(x.total||0);},0)) + '</strong></div></div></div>';
+    h += '<div class="invoice-actions purchase-actions"><button class="primary" type="button" onclick="savePurchaseInvoice()">💾 حفظ الفاتورة وترحيل المخزون</button><button class="light" type="button" onclick="closeModal();show(\'purchases\')">إلغاء / رجوع</button></div>';
     h += '</div></div>';
     document.getElementById('modal').innerHTML = h;
+    togglePurchasePackFields();
     setPurchasePaymentType(purchasePaymentType);
+}
+function renderPurchaseCartRows() {
+    if(!purchaseCart.length) return '<div class="invoice-empty">لم تتم إضافة أصناف بعد. أضف الأصناف من الحقول أعلاه.</div>';
+    return purchaseCart.map(function(item,i){
+        var safeName=String(item.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return '<article class="invoice-line purchase-line"><strong class="purchase-item-title">'+safeName+'</strong><span class="purchase-barcode muted">'+String(item.barcode||'—')+'</span><span class="purchase-unit">'+String(item.unit||'حبة')+'</span><span class="purchase-qty">'+Number(item.enteredQty||item.qty||0)+'</span><span class="purchase-cost">'+money(item.cost||0)+'</span><strong class="purchase-total">'+money(item.total||0)+'</strong><button class="danger invoice-delete" type="button" onclick="removePurchaseCartItem('+i+')">حذف</button></article>';
+    }).join('');
 }
 
 function togglePurchasePackFields() {
@@ -1491,11 +1563,12 @@ function removePurchaseCartItem(index) {
 }
 
 function refreshPurchaseCartContainer() {
-    var html = '';
-    for(var i=0; i<purchaseCart.length; i++) {
-        html += '<div style="display:flex; justify-content:space-between; align-items:center; padding:4px; border-bottom:1px solid #eee;"><span>' + purchaseCart[i].name + ' (' + (purchaseCart[i].enteredQty||purchaseCart[i].qty) + ' ' + (purchaseCart[i].unit||'حبة') + ') - ' + money(purchaseCart[i].total) + '</span><button class="danger" style="padding:4px 8px; font-size:11px;" onclick="removePurchaseCartItem(' + i + ')">حذف</button></div>';
-    }
-    document.getElementById('purItemsContainer').innerHTML = html || '<div class="muted" style="text-align:center;">القائمة فارغة</div>';
+    var box=document.getElementById('purItemsContainer');
+    if(box) box.innerHTML=renderPurchaseCartRows();
+    var count=document.getElementById('purItemCount');
+    if(count) count.textContent=String(purchaseCart.length);
+    var total=document.getElementById('purGrandTotal');
+    if(total) total.textContent=money(purchaseCart.reduce(function(a,x){return a+Number(x.total||0);},0));
 }
 
 function savePurchaseInvoice() {
