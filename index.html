@@ -1231,19 +1231,48 @@ function renderStock(q) {
                 html += '<div class="muted">سعر البيع: ' + money(p.sell) + ' | المتبقي: <b style="color:#0f766e">' + (p.packType==='كيس' ? p.qty + ' كيس' : p.qty + ' حبة (' + Math.floor(p.qty/(p.packSize||1)) + ' ' + (p.packType||'كرتون') + ')') + '</b></div>';
             }
             html += '</div>';
+            html += '<div style="display:flex; gap:6px; flex-wrap:wrap;">';
             if(isManager) {
-                html += '<div style="display:flex; gap:6px;">';
-                html += '<button class="light" style="padding:8px 10px;" onclick="editProductModal(' + p.id + ')">✏️</button>';
+                html += '<button class="light" style="padding:8px 10px;" onclick="editProductModal(' + p.id + ')">✏️ تعديل كامل</button>';
                 html += '<button class="danger" style="padding:8px 10px;" onclick="deleteProduct(' + p.id + ')">🗑️</button>';
-                html += '</div>';
+            } else {
+                html += '<button class="light" style="padding:8px 10px;" onclick="quickEditProductStock(' + p.id + ')">✏️ تعديل السعر والكمية</button>';
             }
+            html += '</div>';
             html += '</div>';
         }
     }
     el.innerHTML = html || '<div class="card muted">لا توجد منتجات مطابقة</div>';
 }
 
+function quickEditProductStock(id) {
+    var p = (db.products || []).find(function(x){ return String(x.id) === String(id); });
+    if(!p) return alert('المنتج غير موجود');
+    var nextSell = prompt('سعر بيع الحبة للمنتج «' + p.name + '»:', String(Number(p.sell || 0)));
+    if(nextSell === null) return;
+    nextSell = Number(nextSell);
+    if(!isFinite(nextSell) || nextSell < 0) return alert('أدخل سعر بيع صحيحاً');
+    var nextPackSell = prompt('سعر بيع ' + (p.packType || 'الكرتون') + ':', String(Number(p.packSell || (p.sell || 0) * (p.packSize || 1))));
+    if(nextPackSell === null) return;
+    nextPackSell = Number(nextPackSell);
+    if(!isFinite(nextPackSell) || nextPackSell < 0) return alert('أدخل سعر العبوة صحيحاً');
+    var nextQty = prompt('الكمية الحالية في المخزون (بالحبات):', String(Number(p.qty || 0)));
+    if(nextQty === null) return;
+    nextQty = Number(nextQty);
+    if(!isFinite(nextQty) || nextQty < 0) return alert('أدخل كمية صحيحة');
+    var oldQty = Number(p.qty || 0);
+    p.sell = nextSell;
+    p.packSell = nextPackSell;
+    p.qty = nextQty;
+    if(!db.stockMovements) db.stockMovements = [];
+    if(nextQty !== oldQty) db.stockMovements.push({id:Date.now(),date:new Date().toISOString(),kind:'تعديل مخزون',item:p.name,qty:nextQty-oldQty,reference:'MANUAL-'+Date.now(),worker:currentUser});
+    saveDB();
+    renderStock('');
+    toast('تم تحديث سعر البيع والكمية بنجاح');
+}
+
 function deleteProduct(id) {
+    if(!isManager) return alert('حذف المنتجات خاص بالمدير');
     if(confirm('هل انت متأكد من حذف هذا المنتج؟')) {
         db.products = db.products.filter(function(x){ return x.id !== id; });
         saveDB();
@@ -1506,7 +1535,7 @@ function renderSaleModalContent() {
         itemsHtml += '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px; margin-bottom:8px;">';
         itemsHtml += '<div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;"><span>' + c.name + '</span><span>' + money(itemTotal) + '</span></div>';
         itemsHtml += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">';
-        itemsHtml += '<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><label>نوع البيع:</label><select class="input" style="width:auto;min-height:48px;padding:8px;font-size:16px;font-weight:700" onchange="updateCartUnit(' + i + ',this.value)"><option value="حبة" ' + ((c.unit||'حبة')==='حبة'?'selected':'') + '>حبة (' + money(pForCart.sell||c.sell) + ')</option>' + ((pForCart.packType && pForCart.packType!=='حبة') ? '<option value="' + pForCart.packType + '" ' + (c.unit===pForCart.packType?'selected':'') + '>' + pForCart.packType + ' (' + money(pForCart.packSell||((pForCart.sell||c.sell)*(pForCart.packType==='كرتون'?packSizeForCart:1))) + ')</option>' : '') + '</select><label>العدد:</label><input type="number" class="input" style="width:95px;min-height:52px;padding:8px;text-align:center;font-size:20px;font-weight:800" min="1" value="' + c.qty + '" onchange="updateCartQty(' + i + ', this.value)"></div>';
+        itemsHtml += '<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><label>نوع البيع:</label><select class="input" style="width:auto;min-height:48px;padding:8px;font-size:16px;font-weight:700" onchange="updateCartUnit(' + i + ',this.value)"><option value="حبة" ' + ((c.unit||'حبة')==='حبة'?'selected':'') + '>حبة (' + money(pForCart.sell||c.sell) + ')</option>' + ((pForCart.packType && pForCart.packType!=='حبة') ? '<option value="' + pForCart.packType + '" ' + (c.unit===pForCart.packType?'selected':'') + '>' + pForCart.packType + ' (' + money(pForCart.packSell||((pForCart.sell||c.sell)*(pForCart.packType==='كرتون'?packSizeForCart:1))) + ')</option>' : '') + '</select><label>سعر البيع:</label><input type="number" class="input" style="width:110px;min-height:52px;padding:8px;text-align:center;font-size:18px;font-weight:800" min="0" step="any" value="' + Number(c.sell||0) + '" onchange="updateCartSell(' + i + ',this.value)"><label>العدد:</label><input type="number" class="input" style="width:95px;min-height:52px;padding:8px;text-align:center;font-size:20px;font-weight:800" min="1" value="' + c.qty + '" onchange="updateCartQty(' + i + ', this.value)"></div>';
         itemsHtml += '<button class="danger" style="padding:6px 10px; font-size:12px;" onclick="removeSaleCart(' + i + ')">حذف</button>';
         itemsHtml += '</div></div>';
     }
@@ -1534,6 +1563,14 @@ function renderSaleModalContent() {
     h += '<button class="danger" style="width:100%" onclick="closeModal()">إلغاء ورجوع</button>';
     h += '</div></div>';
     document.getElementById('modal').innerHTML = h;
+}
+
+function updateCartSell(i, val) {
+    if(!db.cart[i]) return;
+    var price = Number(val);
+    if(!isFinite(price) || price < 0) return alert('أدخل سعر بيع صحيحاً');
+    db.cart[i].sell = price;
+    renderSaleModalContent();
 }
 
 function updateCartQty(i, val) {
