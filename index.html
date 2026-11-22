@@ -1206,10 +1206,12 @@ function show(v) {
         h += '<div class="section">👤 إدارة الديون والزبائن</div>';
         var dHtml = '';
         for(var i=0; i<(db.debts||[]).length; i++) {
-            var d = db.debts[i];
-            dHtml += '<div class="card" style="margin-bottom:8px"><b>' + d.customer + '</b><div class="muted">المتبقي: ' + money(d.remaining) + '</div><button class="primary" style="margin-top:8px; padding:6px 12px; font-size:12px" onclick="payDebt(' + d.id + ')">تسجيل سداد</button></div>';
+            var d = db.debts[i], debtCode=d.currency||'YER';
+            dHtml += '<div class="card" style="margin-bottom:8px;border-right:4px solid '+currencyColor(debtCode)+'"><b>' + d.customer + '</b><div class="muted">المتبقي: ' + money(d.remaining,debtCode) + '</div><button class="primary" style="margin-top:8px; padding:8px 14px; font-size:13px" onclick="openCustomerReceipt(' + d.id + ')">＋ سند قبض من العميل</button></div>';
         }
         h += dHtml || '<div class="card muted">لا توجد ديون مسجلة</div>';
+        h += '<div class="section">🧾 سجل سندات قبض العملاء</div>';
+        h += (db.payments||[]).slice().reverse().map(function(p){var pc=p.currency||'YER';return '<div class="card" style="margin-bottom:7px"><b>'+ (p.receiptNo||'سند قبض') +' — '+p.customer+'</b><div>المبلغ المقبوض: '+money(p.amount,pc)+'</div><div class="muted">'+(p.date||'')+'</div><button class="light" onclick="printCustomerReceipt('+p.id+')">🖨️ طباعة السند</button></div>';}).join('') || '<div class="muted">لا توجد سندات قبض حتى الآن</div>';
     }
     document.getElementById('view').innerHTML = h;
     if (v === 'stock') renderStock('');
@@ -2379,32 +2381,39 @@ function generateInvoicePDF(cartItems, subtotal, discount, totalAmount, saleType
     html2pdf().set(opt).from(pdfEl).save().then(function() { pdfEl.style.display = 'none'; if(callback) callback(); });
 }
 
-function payDebt(id) {
-    var d = db.debts.find(function(x){ return x.id === id; });
-    if(!d) return;
-    var amount = Number(prompt('أدخل مبلغ السداد للعميل ' + d.customer + ' (المتبقي: ' + d.remaining + '):', d.remaining));
-    if(!amount || amount <= 0) return;
-    
-    d.remaining = Math.max(0, d.remaining - amount);
-    
-    if(!db.payments) db.payments = [];
-    db.payments.push({
-        id: Date.now(),
-        debtId: d.id,
-        customer: d.customer,
-        amount: amount,
-        currency: d.currency || getCurrencyCode(),
-        date: new Date().toISOString()
-    });
-
-    if(d.remaining <= 0) {
-        db.debts = db.debts.filter(function(x){ return x.id !== id; });
-    }
-    
-    saveDB(); 
-    show('debts'); 
-    toast('تم تسجيل سداد الدين وإضافته للخزينة اليومية');
+function openCustomerReceipt(id) {
+    var d=(db.debts||[]).find(function(x){return String(x.id)===String(id);});
+    if(!d)return;
+    var code=d.currency||'YER';
+    var modal=document.getElementById('modal');
+    modal.innerHTML='<div class="sale-modal" style="display:flex"><div class="sale-sheet" style="max-width:520px"><h2 style="text-align:center;color:#0f766e">🧾 سند قبض من عميل</h2><div class="card"><b>العميل: '+d.customer+'</b><div>الدين المتبقي: '+money(d.remaining,code)+'</div><div>العملة: '+currencyLabel(code)+'</div></div><label class="box-label">مبلغ السداد</label><input id="customerReceiptAmount" class="input" type="number" min="0.01" max="'+Number(d.remaining)+'" step="0.01" value="'+Number(d.remaining)+'"><label class="box-label">بيان السند (اختياري)</label><input id="customerReceiptNote" class="input" value="سداد من حساب العميل"><div class="row" style="gap:8px;margin-top:12px"><button class="primary" style="flex:1" onclick="saveCustomerReceipt('+d.id+')">حفظ سند القبض</button><button class="light" style="flex:1" onclick="closeModal()">إلغاء</button></div></div></div>';
 }
+function saveCustomerReceipt(id) {
+    var d=(db.debts||[]).find(function(x){return String(x.id)===String(id);});
+    if(!d)return;
+    var amount=Number(document.getElementById('customerReceiptAmount').value);
+    var remaining=Number(d.remaining||0);
+    if(!isFinite(amount)||amount<=0){alert('أدخل مبلغاً صحيحاً أكبر من صفر');return;}
+    if(amount>remaining+0.000001){alert('مبلغ السداد أكبر من الدين المتبقي');return;}
+    var code=d.currency||'YER', now=new Date(), receiptId=Date.now();
+    var payment={id:receiptId,debtId:d.id,customer:d.customer,amount:amount,currency:code,date:now.toISOString(),receiptNo:'CR-'+now.getFullYear()+'-'+String(receiptId).slice(-6),note:(document.getElementById('customerReceiptNote').value||'').trim(),remainingAfter:Math.max(0,remaining-amount)};
+    if(!Array.isArray(db.payments))db.payments=[];
+    db.payments.push(payment);
+    d.remaining=Math.max(0,remaining-amount);
+    if(d.remaining<=0.000001)db.debts=db.debts.filter(function(x){return String(x.id)!==String(id);});
+    saveDB();closeModal();show('debts');toast('تم حفظ سند القبض وخصم المبلغ من دين العميل');
+    printCustomerReceipt(receiptId);
+}
+function printCustomerReceipt(id) {
+    var p=(db.payments||[]).find(function(x){return String(x.id)===String(id);});
+    if(!p)return;
+    var code=p.currency||'YER', shop=String(currentShop||'سند للمحاسبة');
+    var html='<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>سند قبض '+(p.receiptNo||'')+'</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#17202a;max-width:700px;margin:auto}.paper{border:2px solid #16436a;border-radius:14px;padding:24px}h2{text-align:center;color:#16436a;margin:0 0 8px}.row{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:12px 0}.amount{text-align:center;font-size:26px;font-weight:bold;color:#0f766e;padding:18px}small{color:#666}@media print{button{display:none}.paper{border:1px solid #333}}</style><div class="paper"><h2>'+shop+'</h2><h3 style="text-align:center">سند قبض من عميل</h3><div class="row"><b>رقم السند</b><span>'+(p.receiptNo||'')+'</span></div><div class="row"><b>التاريخ</b><span>'+new Date(p.date).toLocaleString('ar-YE')+'</span></div><div class="row"><b>استلمنا من</b><span>'+p.customer+'</span></div><div class="amount">'+money(p.amount,code)+'</div><div class="row"><b>العملة</b><span>'+currencyLabel(code)+'</span></div><div class="row"><b>المتبقي بعد السداد</b><span>'+money(p.remainingAfter,code)+'</span></div><div class="row"><b>البيان</b><span>'+(p.note||'—')+'</span></div><p style="margin-top:45px">توقيع المستلم: __________________</p><small>تم إصدار هذا السند من نظام سند للمحاسبة</small></div><p style="text-align:center"><button onclick="window.print()">طباعة سند القبض</button></p></html>';
+    var w=window.open('','_blank');
+    if(!w){alert('اسمح بفتح النوافذ المنبثقة لطباعة سند القبض');return;}
+    w.document.open();w.document.write(html);w.document.close();
+}
+function payDebt(id) { openCustomerReceipt(id); }
 
 function startCameraScanner(targetInputId) {
     if(typeof Html5Qrcode==='undefined'){alert('قارئ الباركود غير محمّل. تحقق من اتصال الإنترنت ثم أعد المحاولة.');return;}
