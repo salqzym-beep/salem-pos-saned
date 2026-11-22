@@ -171,7 +171,7 @@ body{background:var(--paper);color:var(--ink)}
 .sale-columns+ #invoiceItemsList .invoice-item-fields{grid-template-columns:minmax(100px,1fr) .7fr .9fr .9fr 64px}
 .purchase-columns{grid-template-columns:minmax(160px,2fr) .7fr .7fr .9fr .9fr 64px}
 .purchase-line{display:grid;grid-template-columns:minmax(160px,2fr) .7fr .7fr .9fr .9fr 64px;gap:8px;align-items:center}
-.purchase-item-title{color:#173f68;overflow-wrap:anywhere}
+.purchase-product-cell{min-width:0}.purchase-item-title{display:block;color:#173f68;overflow-wrap:anywhere}
 .purchase-barcode{display:block;font-size:11px}
 .purchase-payment-box{background:#edf3f8;border:1px solid #d1dce7;border-radius:10px;padding:12px}
 .purchase-payment-buttons{display:flex;gap:8px}
@@ -186,7 +186,7 @@ body{background:var(--paper);color:var(--ink)}
  .purchase-line{grid-template-columns:1fr 1fr;gap:7px;padding:12px}
  .sale-columns{display:none}
  .sale-columns+ #invoiceItemsList .invoice-item-fields{grid-template-columns:1fr 1fr;gap:8px}
- .purchase-item-title{grid-column:1/-1;font-size:16px}
+ .purchase-product-cell{grid-column:1/-1}.purchase-item-title{font-size:16px}
  .purchase-barcode{grid-column:1/-1}
  .purchase-total{font-size:17px;color:#173f68}
  .invoice-item-fields{grid-template-columns:1fr 1fr;gap:8px}
@@ -1485,7 +1485,8 @@ function renderPurchaseCartRows() {
     if(!purchaseCart.length) return '<div class="invoice-empty">لم تتم إضافة أصناف بعد. أضف الأصناف من الحقول أعلاه.</div>';
     return purchaseCart.map(function(item,i){
         var safeName=String(item.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        return '<article class="invoice-line purchase-line"><strong class="purchase-item-title">'+safeName+'</strong><span class="purchase-barcode muted">'+String(item.barcode||'—')+'</span><span class="purchase-unit">'+String(item.unit||'حبة')+'</span><span class="purchase-qty">'+Number(item.enteredQty||item.qty||0)+'</span><span class="purchase-cost">'+money(item.cost||0)+'</span><strong class="purchase-total">'+money(item.total||0)+'</strong><button class="danger invoice-delete" type="button" onclick="removePurchaseCartItem('+i+')">حذف</button></article>';
+        var safeBarcode=String(item.barcode||'—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return '<article class="invoice-line purchase-line"><div class="purchase-product-cell"><strong class="purchase-item-title">'+safeName+'</strong><span class="purchase-barcode muted">باركود: '+safeBarcode+'</span></div><span class="purchase-unit">'+String(item.unit||'حبة')+'</span><span class="purchase-qty">'+Number(item.enteredQty||item.qty||0)+'</span><span class="purchase-cost">'+money(item.cost||0)+'</span><strong class="purchase-total">'+money(item.total||0)+'</strong><button class="danger invoice-delete" type="button" onclick="removePurchaseCartItem('+i+')">حذف</button></article>';
     }).join('');
 }
 
