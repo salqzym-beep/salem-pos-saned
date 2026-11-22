@@ -1152,12 +1152,24 @@ function addProductModal() {
     h += '<label class="box-label">سعر بيع الحبة</label><input id="pSell" class="input" type="number">';
     h += '<label class="box-label">نوع العبوة الكبيرة</label><select id="pPackType" class="input" onchange="toggleProductPackSize(false)"><option value="كرتون">كرتون</option><option value="كيس">كيس</option></select>';
     h += '<div id="pPackSizeWrap"><label class="box-label">عدد الحبات داخل الكرتون</label><input id="pPackSize" class="input" type="number" min="1" value="12"></div>';
-    h += '<label class="box-label">سعر بيع الكرتون/الكيس</label><input id="pPackSell" class="input" type="number">';
+    h += '<label id="pPackSellLabel" class="box-label">سعر بيع الكرتون</label><input id="pPackSell" class="input" type="number">';
     h += '<label class="box-label">كمية المخزون (حبات)</label><input id="pQty" class="input" type="number" value="10">';
     h += '<button class="primary" style="width:100%; margin-top:15px;" onclick="saveNewProduct()">حفظ المنتج</button>';
     h += '<button class="danger" style="width:100%; margin-top:8px" onclick="closeModal()">إلغاء</button>';
     h += '</div></div>';
     document.getElementById('modal').innerHTML = h;
+    toggleProductPackSize(false);
+}
+
+function toggleProductPackSize(isEdit) {
+    var prefix = isEdit ? 'editP' : 'p';
+    var typeEl = document.getElementById(prefix + 'PackType');
+    if(!typeEl) return;
+    var isBag = typeEl.value === 'كيس';
+    var sizeWrap = document.getElementById(prefix + 'PackSizeWrap');
+    if(sizeWrap) sizeWrap.style.display = isBag ? 'none' : '';
+    var priceLabel = document.getElementById(prefix + 'PackSellLabel');
+    if(priceLabel) priceLabel.textContent = isBag ? 'سعر بيع الكيس' : 'سعر بيع الكرتون';
 }
 
 function saveNewProduct() {
@@ -1188,7 +1200,7 @@ function editProductModal(id) {
     h += '<label class="box-label">سعر بيع الحبة</label><input id="editPSell" class="input" type="number" value="' + p.sell + '">';
     h += '<label class="box-label">نوع العبوة الكبيرة</label><select id="editPPackType" class="input" onchange="toggleProductPackSize(true)"><option value="كرتون" ' + ((p.packType||'كرتون')==='كرتون'?'selected':'') + '>كرتون</option><option value="كيس" ' + (p.packType==='كيس'?'selected':'') + '>كيس</option></select>';
     h += '<div id="editPPackSizeWrap"><label class="box-label">عدد الحبات داخل الكرتون</label><input id="editPPackSize" class="input" type="number" min="1" value="' + (p.packSize||1) + '"></div>';
-    h += '<label class="box-label">سعر بيع العبوة</label><input id="editPPackSell" class="input" type="number" value="' + (p.packSell||p.sell*(p.packSize||1)) + '">';
+    h += '<label id="editPPackSellLabel" class="box-label">سعر بيع ' + (p.packType==='كيس'?'الكيس':'الكرتون') + '</label><input id="editPPackSell" class="input" type="number" value="' + (p.packSell||p.sell*(p.packSize||1)) + '">';
     h += '<label class="box-label">المخزون (حبات)</label><input id="editPQty" class="input" type="number" value="' + p.qty + '">';
     h += '<button class="primary" style="width:100%; margin-top:15px;" onclick="updateProduct(' + p.id + ')">حفظ التعديلات</button>';
     h += '<button class="danger" style="width:100%; margin-top:8px" onclick="closeModal()">إلغاء</button>';
