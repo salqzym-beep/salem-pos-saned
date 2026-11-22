@@ -981,6 +981,13 @@ function getAccountPartyNames(type){
  return (list||[]).map(function(x){return x.name;}).filter(Boolean);
 }
 
+function ensureSupplierAccount(name){
+ var clean=String(name||'').trim();if(!clean)return null;
+ if(!Array.isArray(db.suppliers))db.suppliers=[];
+ var found=db.suppliers.find(function(x){return String(x.name||'').trim().toLocaleLowerCase()===clean.toLocaleLowerCase();});
+ if(found)return found;
+ var created={id:Date.now()+Math.floor(Math.random()*1000),name:clean,phone:''};db.suppliers.push(created);return created;
+}
 function addAccountParty(type){
  var name=prompt(type==='customer'?'اسم العميل الجديد':'اسم المورد الجديد'); if(!name||!name.trim())return;
  var key=type==='customer'?'customers':'suppliers'; if(!db[key])db[key]=[];
@@ -996,7 +1003,7 @@ function createSupplierReceipt(){
  var note=prompt('بيان السند (اختياري):','دفعة للمورد')||'دفعة للمورد';
  if(!db.supplierReceipts)db.supplierReceipts=[];
  if(!db.suppliers)db.suppliers=[];
- if(!db.suppliers.some(function(x){return String(x.name).toLowerCase()===name.toLowerCase();}))db.suppliers.push({id:Date.now(),name:name,phone:''});
+ ensureSupplierAccount(name);
  var receiptNum='SUP-PAY-'+Date.now();
  db.supplierReceipts.push({id:Date.now(),num:receiptNum,supplier:name,amount:amount,note:note,date:new Date().toLocaleDateString(),createdAt:new Date().toISOString()});
  saveDB();show('purchases');
@@ -1005,8 +1012,9 @@ function createSupplierReceipt(){
 
 function accountBalance(type,name){
  if(type==='customer') return (db.debts||[]).filter(function(d){return String(d.customer||'').trim().toLowerCase()===String(name||'').trim().toLowerCase();}).reduce(function(a,d){return a+Number(d.remaining||0);},0);
- var purchasesTotal=(db.purchases||[]).filter(function(p){return p.supplier===name && (p.paymentType==='credit' || !p.paymentType);}).reduce(function(a,p){return a+Number(p.total||0);},0);
- return purchasesTotal-(db.supplierReceipts||[]).filter(function(r){return r.supplier===name;}).reduce(function(a,r){return a+Number(r.amount||0);},0);
+ var normName=String(name||'').trim().toLocaleLowerCase();
+ var purchasesTotal=(db.purchases||[]).filter(function(p){return String(p.supplier||'').trim().toLocaleLowerCase()===normName && (p.paymentType==='credit' || !p.paymentType);}).reduce(function(a,p){return a+Number(p.total||0);},0);
+ return purchasesTotal-(db.supplierReceipts||[]).filter(function(r){return String(r.supplier||'').trim().toLocaleLowerCase()===normName;}).reduce(function(a,r){return a+Number(r.amount||0);},0);
 }
 function refreshStatementNames(){
  var type=document.getElementById('statementType').value;
@@ -1023,8 +1031,11 @@ function renderAccountStatement(){
   (db.payments||[]).filter(function(x){return x.customer===name;}).forEach(function(x){rows.push({date:x.date,detail:'سداد '+(x.note||''),debit:0,credit:Number(x.amount||0)});});
   (db.salesReturns||[]).filter(function(x){return x.customer===name;}).forEach(function(x){rows.push({date:x.date,detail:'مرتجع مبيعات • '+(x.item||''),debit:0,credit:Number(x.total||0)});});
  }else{
-  (db.purchases||[]).filter(function(x){return x.supplier===name && (x.paymentType==='credit'||!x.paymentType);}).forEach(function(x){rows.push({date:x.date,detail:'فاتورة شراء '+(x.num||x.id||''),debit:0,credit:Number(x.total||0)});});
-  (db.supplierReceipts||[]).filter(function(x){return x.supplier===name;}).forEach(function(x){rows.push({date:x.date,detail:'سند صرف '+(x.num||'')+' • '+(x.note||''),debit:Number(x.amount||0),credit:0});});
+  (db.purchases||[]).filter(function(x){return String(x.supplier||'').trim().toLocaleLowerCase()===String(name||'').trim().toLocaleLowerCase();}).forEach(function(x){
+   if(x.paymentType==='credit'||!x.paymentType) rows.push({date:x.date,detail:'فاتورة شراء آجلة '+(x.num||x.id||''),debit:0,credit:Number(x.total||0)});
+   else rows.push({date:x.date,detail:'فاتورة شراء نقدية '+(x.num||x.id||''),debit:Number(x.total||0),credit:Number(x.total||0)});
+  });
+  (db.supplierReceipts||[]).filter(function(x){return String(x.supplier||'').trim().toLocaleLowerCase()===String(name||'').trim().toLocaleLowerCase();}).forEach(function(x){rows.push({date:x.createdAt||x.date,detail:'سند صرف '+(x.num||'')+' • '+(x.note||''),debit:Number(x.amount||0),credit:0});});
  }
  rows.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
  var totalDebit=0,totalCredit=0,balance=0,tbody='';
@@ -1467,7 +1478,8 @@ function savePurchaseInvoice() {
     }
 
     db.purchases.push({ id: editingPurchaseId || Date.now(), num: purNum, supplier: supplierName || '', paymentType: purchasePaymentType, date: new Date().toLocaleDateString(), items: purchaseCart, total: total });
-    if(purchasePaymentType === 'credit' && supplierName && db.suppliers && !db.suppliers.some(function(x){return String(x.name).toLowerCase()===supplierName.toLowerCase();})) db.suppliers.push({id:Date.now(),name:supplierName,phone:''});
+    // كل مورد يذكر في فاتورة الشراء يُسجل تلقائياً في دليل الموردين، سواء كانت نقداً أو آجلاً.
+    if(supplierName) ensureSupplierAccount(supplierName);
     
     if(!db.stockMovements) db.stockMovements = [];
     for(var i=0; i<purchaseCart.length; i++) {
