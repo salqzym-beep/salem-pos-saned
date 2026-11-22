@@ -275,6 +275,36 @@ body{background:var(--paper);color:var(--ink)}
 @media(max-width:900px){.golden-invoice{min-width:760px!important}.golden-info-grid{grid-template-columns:150px 1fr}.golden-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.golden-bottom{grid-template-columns:260px 1fr}.golden-table-wrap{height:38vh}}
 @media(max-width:650px){.golden-invoice{min-width:760px!important}}
 
+
+/* اختيار وضع العرض */
+.display-mode-switch{display:flex;gap:4px;padding:3px;background:#ffffff20;border:1px solid #ffffff45;border-radius:9px}
+.display-mode-switch button{padding:8px 10px;border-radius:6px;font-size:12px;font-weight:800;white-space:nowrap}
+.display-mode-switch button.mode-active{background:#fff;color:#123b63;box-shadow:0 1px 4px #0002}
+body.desktop-mode #VIEW_APP{width:100%;max-width:none}
+body.desktop-mode .top,body.desktop-mode .content,body.desktop-mode .nav{max-width:none}
+body.desktop-mode .content{padding-left:18px;padding-right:18px}
+body.desktop-mode .golden-invoice{width:100%;min-width:900px!important;max-width:none}
+body.desktop-mode .golden-table-wrap{overflow:auto}
+body.desktop-mode .golden-fields{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.desktop-mode .golden-bottom{grid-template-columns:minmax(300px,1fr) minmax(340px,1fr)}
+body.desktop-mode #modal .sale-modal{overflow:auto;align-items:flex-start}
+body.desktop-mode #modal .sale-sheet{margin:auto}
+@media (orientation:portrait) and (max-width:900px){
+ body.desktop-mode #modal:has(.golden-invoice)::before,
+ body.desktop-mode #modal:has(.invoice-sheet)::before{
+   content:"↻\A قم بتدوير الهاتف إلى الوضع الأفقي\A لتظهر الفاتورة بتخطيط سطح المكتب";
+   white-space:pre-line;text-align:center;display:flex;align-items:center;justify-content:center;
+   position:fixed;inset:0;z-index:1000000;background:rgba(12,29,48,.97);color:#fff;
+   font-size:clamp(22px,5vw,32px);font-weight:900;line-height:2;padding:24px
+ }
+ body.desktop-mode .header-actions{gap:4px!important}
+ body.desktop-mode .display-mode-switch button{font-size:10px;padding:7px 6px}
+}
+@media(max-width:520px){
+ .header-actions{justify-content:flex-start}
+ .display-mode-switch button{font-size:10px;padding:7px 6px}
+}
+
 </style>
 </head>
 <body>
@@ -336,7 +366,11 @@ body{background:var(--paper);color:var(--ink)}
                 <h1 id="appMainTitle">سند للمحاسبة</h1>
                 <div class="sub" id="shopHeaderName">مبيعات • باركود • فواتير • ديون • مخزون</div><a href="https://wa.me/967779282025" target="_blank" rel="noopener" style="display:inline-block;color:#fff;font-size:12px;margin-top:5px;text-decoration:underline">خدمة العملاء واتساب: 779282025</a>
             </div>
-            <div style="display:flex;gap:6px">
+            <div class="header-actions" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                <div class="display-mode-switch" role="group" aria-label="وضع العرض">
+                    <button id="normalModeBtn" class="light mode-active" type="button" onclick="setDisplayMode('normal')">وضع عادي</button>
+                    <button id="desktopModeBtn" class="light" type="button" onclick="setDisplayMode('desktop')">وضع سطح مكتب</button>
+                </div>
                 <button class="light" onclick="openSaleModal()">🛒 بيع جديد</button>
                 <button class="danger" onclick="doLogout()" style="padding:12px 10px">🚪 خروج</button>
             </div>
@@ -354,6 +388,24 @@ body{background:var(--paper);color:var(--ink)}
 </div>
 
 <div id="modal"></div>
+<script>
+function setDisplayMode(mode){
+    var desktop=mode==='desktop';
+    document.body.classList.toggle('desktop-mode',desktop);
+    document.body.classList.toggle('normal-mode',!desktop);
+    try{localStorage.setItem('sanadDisplayMode',desktop?'desktop':'normal');}catch(e){}
+    var normal=document.getElementById('normalModeBtn'),desk=document.getElementById('desktopModeBtn');
+    if(normal){normal.classList.toggle('mode-active',!desktop);normal.setAttribute('aria-pressed',String(!desktop));}
+    if(desk){desk.classList.toggle('mode-active',desktop);desk.setAttribute('aria-pressed',String(desktop));}
+}
+(function(){
+    var mode='normal';
+    try{mode=localStorage.getItem('sanadDisplayMode')||'normal';}catch(e){}
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setDisplayMode(mode);});
+    else setDisplayMode(mode);
+})();
+</script>
+
 
 <div id="barcodeModal" class="sale-modal" style="display:none; align-items:center;">
     <div class="sale-sheet" style="max-width:450px; text-align:center;">
